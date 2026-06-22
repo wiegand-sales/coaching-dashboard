@@ -23,27 +23,27 @@ var ratingCriteria=[
   {id:5,name:'Customer Rapport',cat:'Communication',target:85,desc:'Building trust and a positive relationship'},
 ];
 
-var ROLES=['Sales Representative','Sales Executive','Sales Coach'];
+var ROLES=['Vertriebsmitarbeiter','Senior Vertriebsmitarbeiter','Sales Coach'];
 var GLOBAL_TARGETS={crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0};
 
 var employees=[
-  {id:1,name:'Anna Bauer',role:'Sales Representative',phase:'Active',color:0,startDate:'2026-04-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
-  {id:2,name:'Markus Fischer',role:'Sales Representative',phase:'Onboarding',color:1,startDate:'2026-06-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:50,crSuperYes:10,crMegaYes:6,optPerH:1.5}},
-  {id:3,name:'Sandra Klein',role:'Sales Executive',phase:'Active',color:2,startDate:'2026-03-01',team:'Valencia',contract:'full',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
-  {id:4,name:'Thomas Müller',role:'Sales Executive',phase:'Active',color:3,startDate:'2026-02-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
-  {id:5,name:'Julia Schneider',role:'Sales Representative',phase:'Development',color:4,startDate:'2026-05-01',team:'Valencia',contract:'part',hours:32,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
+  {id:1,name:'Anna Bauer',role:'Sales Representative',phase:'Aktiv',color:0,startDate:'2026-04-01',team:'Deutschland',contract:'Vollzeit',hours:40,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
+  {id:2,name:'Markus Fischer',role:'Sales Representative',phase:'Onboarding',color:1,startDate:'2026-06-01',team:'Deutschland',contract:'Vollzeit',hours:40,active:true,targets:{crOEM:50,crSuperYes:10,crMegaYes:6,optPerH:1.5}},
+  {id:3,name:'Sandra Klein',role:'Sales Executive',phase:'Aktiv',color:2,startDate:'2026-03-01',team:'Valencia',contract:'Vollzeit',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
+  {id:4,name:'Thomas Müller',role:'Sales Executive',phase:'Aktiv',color:3,startDate:'2026-02-01',team:'Deutschland',contract:'Vollzeit',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
+  {id:5,name:'Julia Schneider',role:'Sales Representative',phase:'Entwicklung',color:4,startDate:'2026-05-01',team:'Valencia',contract:'Teilzeit',hours:32,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
 ];
 
 var protocols={
   1:[
-    {id:1,date:'2026-06-10',rating:'Super Yes',note:'Anna significantly improved her needs analysis. Open questions used effectively.',focus:'Own-Brand Switch',skills:{Bedarfsermittlung:85,Nutzenargumentation:80,Einwandbehandlung:70,Vertrauensaufbau:90,Abschlusstechnik:75},criteria:{1:88,2:82,3:71,4:76,5:90}},
-    {id:2,date:'2026-05-22',rating:'Yes',note:'Good conversation. Closing could be more direct.',focus:'Closing Strength',skills:{Bedarfsermittlung:80,Nutzenargumentation:75,Einwandbehandlung:68,Vertrauensaufbau:85,Abschlusstechnik:60},criteria:{1:80,2:75,3:68,4:61,5:85}},
-    {id:3,date:'2026-05-05',rating:'Teilweise',note:'First attempt with new framework. Structure not yet internalized.',focus:'Conversation Structure',skills:{Bedarfsermittlung:60,Nutzenargumentation:55,Einwandbehandlung:50,Vertrauensaufbau:70,Abschlusstechnik:45},criteria:{1:60,2:55,3:50,4:46,5:70}},
+    {id:1,date:'2026-06-10',rating:'Super Yes',note:'Anna hat die Bedarfsermittlung deutlich verbessert. Offene Fragen wurden gezielt eingesetzt.',focus:'Eigenmarken-Umstieg',skills:{Bedarfsermittlung:85,Nutzenargumentation:80,Einwandbehandlung:70,Vertrauensaufbau:90,Abschlusstechnik:75},criteria:{1:88,2:82,3:71,4:76,5:90}},
+    {id:2,date:'2026-05-22',rating:'Yes',note:'Gutes Gespräch. Abschluss könnte direkter initiiert werden.',focus:'Abschlussstärke',skills:{Bedarfsermittlung:80,Nutzenargumentation:75,Einwandbehandlung:68,Vertrauensaufbau:85,Abschlusstechnik:60},criteria:{1:80,2:75,3:68,4:61,5:85}},
+    {id:3,date:'2026-05-05',rating:'Teilweise',note:'Erster Anlauf mit neuem Gesprächsleitfaden. Struktur noch nicht verinnerlicht.',focus:'Gesprächsstruktur',skills:{Bedarfsermittlung:60,Nutzenargumentation:55,Einwandbehandlung:50,Vertrauensaufbau:70,Abschlusstechnik:45},criteria:{1:60,2:55,3:50,4:46,5:70}},
   ],
-  2:[{id:4,date:'2026-06-08',rating:'Yes',note:'Onboarding going well. Product knowledge growing.',focus:'Product Knowledge',skills:{Bedarfsermittlung:55,Nutzenargumentation:60,Einwandbehandlung:45,Vertrauensaufbau:65,Abschlusstechnik:40},criteria:{1:55,2:60,3:45,4:40,5:65}}],
+  2:[{id:4,date:'2026-06-08',rating:'Yes',note:'Onboarding läuft gut. Produktkenntnisse wachsen.',focus:'Produktwissen',skills:{Bedarfsermittlung:55,Nutzenargumentation:60,Einwandbehandlung:45,Vertrauensaufbau:65,Abschlusstechnik:40},criteria:{1:55,2:60,3:45,4:40,5:65}}],
   3:[],
-  4:[{id:5,date:'2026-06-11',rating:'Mega Yes',note:'Thomas switched a long-term customer to own-brand. Best-practice example.',focus:'Own-Brand Switch',skills:{Bedarfsermittlung:92,Nutzenargumentation:95,Einwandbehandlung:88,Vertrauensaufbau:95,Abschlusstechnik:90},criteria:{1:92,2:95,3:88,4:90,5:95}}],
-  5:[{id:6,date:'2026-06-09',rating:'Teilweise',note:'Active listening good but connection to own-brand benefits missing.',focus:'Value Argumentation',skills:{Bedarfsermittlung:70,Nutzenargumentation:50,Einwandbehandlung:55,Vertrauensaufbau:72,Abschlusstechnik:45},criteria:{1:70,2:50,3:55,4:46,5:72}}],
+  4:[{id:5,date:'2026-06-11',rating:'Mega Yes',note:'Thomas switched a long-term customer to own-brand. Best-practice example.',focus:'Eigenmarken-Umstieg',skills:{Bedarfsermittlung:92,Nutzenargumentation:95,Einwandbehandlung:88,Vertrauensaufbau:95,Abschlusstechnik:90},criteria:{1:92,2:95,3:88,4:90,5:95}}],
+  5:[{id:6,date:'2026-06-09',rating:'Teilweise',note:'Aktives Zuhören gut, aber Verbindung zum Nutzen der Eigenmarke fehlt noch.',focus:'Nutzenargumentation',skills:{Bedarfsermittlung:70,Nutzenargumentation:50,Einwandbehandlung:55,Vertrauensaufbau:72,Abschlusstechnik:45},criteria:{1:70,2:50,3:55,4:46,5:72}}],
 };
 function genPerf(base,days){
   var arr=[];
@@ -87,31 +87,31 @@ var solidroadData={
 var onboarding={1:[true,true,true,true,true],2:[true,true,true,false,false],3:[true,false,false,false,false],4:[true,true,true,true,true],5:[true,true,true,false,false]};
 
 var obSteps=[
-  {label:'Intro Meeting',day:1,detail:'First meeting with the coach. Goals and development plan are discussed. Duration approx. 60 minutes.',videoUrl:''},
+  {label:'Einführungsgespräch',day:1,detail:'First meeting with the coach. Goals and development plan are discussed. Duration approx. 60 minutes.',videoUrl:''},
   {label:'Product Training – Basics',day:1,detail:'Core knowledge of toner, ink and consumables. Differences between OEM and own-brand. Price-value arguments.',videoUrl:''},
-  {label:'Conversation Framework',day:2,detail:'The Wiegand & Partner framework: Needs Analysis → Value Presentation → Objection Handling → Closing. Includes role plays.',videoUrl:''},
-  {label:'First Customer Calls',day:2,detail:'Accompanied practice phase. Coach listens in and gives immediate feedback after each call.',videoUrl:''},
-  {label:'Goal Setting',day:3,detail:'Quarterly targets: CR OEM target, average rating target, Super Yes / Mega Yes per week.',videoUrl:''},
+  {label:'Gesprächsleitfaden',day:2,detail:'The Wiegand & Partner framework: Needs Analysis → Value Presentation → Objection Handling → Closing. Includes role plays.',videoUrl:''},
+  {label:'Erste Kundengespräche',day:2,detail:'Accompanied practice phase. Coach listens in and gives immediate feedback after each call.',videoUrl:''},
+  {label:'Zielvereinbarung',day:3,detail:'Quarterly targets: CR OEM target, average rating target, Super Yes / Mega Yes per week.',videoUrl:''},
 ];
 
 var tasks={
   1:[
     {id:1,text:'Read the pitch script – pages 1 to 9',description:'Take the own-brand pitch script and read pages 1 to 9. Pay special attention to the value argumentation on pages 4-6.',done:false,source:'Session 10.06.2026',priority:'high',dueDate:'2026-06-17'},
-    {id:2,text:'Complete SolidRoad simulation: Own-brand pitch',description:'Log into SolidRoad and complete the own-brand pitch simulation. Aim for a score above 80%.',done:true,source:'Session 10.06.2026',priority:'medium',dueDate:'2026-06-14'},
-    {id:3,text:'Work through onboarding tool – tasks 1 to 5',description:'Use the digital onboarding tool and complete tasks 1 to 5. Estimated time: 45 minutes.',done:false,source:'Onboarding',priority:'high',dueDate:'2026-06-10'},
+    {id:2,text:'SolidRoad-Simulation abschließen: Eigenmarken-Pitch',description:'In SolidRoad einloggen und die Eigenmarken-Pitch-Simulation abschließen. Ziel: über 80 Punkte.',done:true,source:'Session 10.06.2026',priority:'medium',dueDate:'2026-06-14'},
+    {id:3,text:'Work through onboarding tool – tasks 1 to 5',description:'Das digitale Onboarding-Tool nutzen und Aufgaben 1 bis 5 abarbeiten. Geschätzte Zeit: 45 Minuten.',done:false,source:'Onboarding',priority:'high',dueDate:'2026-06-10'},
   ],
-  2:[{id:4,text:'Watch product training video – Day 2',description:'Open the Day 2 onboarding section and watch the training video on toner compatibility.',done:false,source:'Onboarding Day 2',priority:'high',dueDate:'2026-06-20'}],
+  2:[{id:4,text:'Watch product training video – Day 2',description:'Den Onboarding-Bereich für Tag 2 öffnen und das Schulungsvideo zur Toner-Kompatibilität anschauen.',done:false,source:'Onboarding Tag 2',priority:'high',dueDate:'2026-06-20'}],
   3:[],
-  4:[{id:5,text:'Document best-practice call from 11.06',description:'Write a short summary of the customer call on 11.06 where you switched the customer to own-brand. Max. 1 page.',done:false,source:'Session 11.06.2026',priority:'high',dueDate:'2026-06-16'}],
+  4:[{id:5,text:'Best-Practice-Gespräch vom 11.06 dokumentieren',description:'Write a short summary of the customer call on 11.06 where you switched the customer to own-brand. Max. 1 page.',done:false,source:'Session 11.06.2026',priority:'high',dueDate:'2026-06-16'}],
   5:[{id:6,text:'Practice needs analysis – print volume questions',description:'Prepare 5 open questions about print volume and cost per page. Practice saying them out loud.',done:false,source:'Session 09.06.2026',priority:'medium',dueDate:'2026-06-18'}],
 };
 // ── REVIEWS ──
 var reviews={
-  1:[{id:1,type:'Onboarding Review',date:'2026-07-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
-  2:[{id:2,type:'Onboarding Review',date:'2026-09-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
-  3:[{id:3,type:'Performance Review',date:'2026-06-01',status:'completed',notes:'Strong performance. Exceeded CR OEM target consistently.',goals:'Push Super Yes rate to 18%. Focus on closing technique.',rating:'Super Yes',kpis:{crOEM:61,crSuperYes:14,crMegaYes:8,optPerH:2.1}},
-     {id:4,type:'Annual Review',date:'2027-01-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
-  4:[{id:5,type:'Onboarding Review',date:'2026-05-01',status:'completed',notes:'Excellent onboarding. Best-practice example for own-brand switch.',goals:'Maintain Mega Yes rate. Document best-practice calls.',rating:'Mega Yes',kpis:{crOEM:76,crSuperYes:22,crMegaYes:15,optPerH:3.0}},
-     {id:6,type:'Performance Review',date:'2026-12-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
-  5:[{id:7,type:'Onboarding Review',date:'2026-08-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
+  1:[{id:1,type:'Onboarding-Gespräch',date:'2026-07-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
+  2:[{id:2,type:'Onboarding-Gespräch',date:'2026-09-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
+  3:[{id:3,type:'Performance-Gespräch',date:'2026-06-01',status:'abgeschlossen',notes:'Starke Performance. CR OEM Ziel konstant übertroffen.',goals:'Super Yes Rate auf 18% steigern. Fokus auf Abschlusstechnik.',rating:'Super Yes',kpis:{crOEM:61,crSuperYes:14,crMegaYes:8,optPerH:2.1}},
+     {id:4,type:'Jahresgespräch',date:'2027-01-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
+  4:[{id:5,type:'Onboarding-Gespräch',date:'2026-05-01',status:'abgeschlossen',notes:'Exzellentes Onboarding. Best-Practice-Beispiel für Eigenmarken-Umstieg.',goals:'Mega Yes Rate halten. Best-Practice-Gespräche dokumentieren.',rating:'Mega Yes',kpis:{crOEM:76,crSuperYes:22,crMegaYes:15,optPerH:3.0}},
+     {id:6,type:'Performance-Gespräch',date:'2026-12-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
+  5:[{id:7,type:'Onboarding-Gespräch',date:'2026-08-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
 };
