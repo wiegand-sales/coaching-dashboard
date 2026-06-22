@@ -260,6 +260,7 @@ var KPI_TARGETS={crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0};
 var CR_GOOD=55;
 
 // ── STATE ──
+var teamRange=7;
 var settings={srApiKey:'',srOrgId:'',ftpUrl:''};
 var view='team', selectedEmp=1, activeTab='performance';
 var perfMetric='optPerH', perfRange=7;
@@ -456,6 +457,7 @@ function renderSidebar(){
   });
 }
 
+function setTeamRange(d){teamRange=d;renderTeam();}
 function showView(v){view=v;renderSidebar();renderMain();}
 function renderMain(){if(view==='team')renderTeam();else if(view==='settings')renderEinstellungen();else renderEmpDetail();}
 
@@ -500,162 +502,251 @@ function aufmerksamkeitFarbe(tage){
 
 function renderTeam(){
   var ma=document.getElementById('mainArea');
-  var allP=activeEmployees().map(function(e){return getPerf(e.id,7);}).reduce(function(a,b){return a.concat(b);},[]);
+  if(!ma)return;
+  var days=teamRange||7;
+  var list=activeEmployees();
+  var allP=list.map(function(e){return getPerf(e.id,days);}).reduce(function(a,b){return a.concat(b);},[]);
   function tAvg(key){if(!allP.length)return null;return allP.reduce(function(a,x){return a+x[key];},0)/allP.length;}
-  var totalAlerts=activeEmployees().reduce(function(a,e){return a+checkAlerts(e.id).length;},0);
-  var totalMargin=activeEmployees().reduce(function(a,e){return a+getPerf(e.id,7).reduce(function(b,x){return b+(x.margin||0);},0);},0);
+  var totalAlerts=list.reduce(function(a,e){return a+checkAlerts(e.id).length;},0);
+  var totalMargin=list.reduce(function(a,e){return a+getPerf(e.id,days).reduce(function(b,x){return b+(x.margin||0);},0);},0);
+  var oem7=tAvg('crOEM'),sy7=tAvg('crSuperYes'),my7=tAvg('crMegaYes');
 
   function crCell(val,target){
     if(val===null)return '<td style="padding:10px 14px;border-bottom:1px solid var(--border)">—</td>';
     var v=Math.round(val);
-    var col=v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)';
-    var hitMark=target?(v>=target?'✓':'↓'+target+'%'):'';
-    return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);min-width:100px">'
+    var col=target?(v>=target?'var(--teal)':v>=target*0.85?'var(--amber)':'var(--red)'):(v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)');
+    return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);min-width:90px">'
       +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
       +'<span style="font-size:13px;font-weight:600;color:'+col+'">'+v+'%</span>'
-      +(target?'<span style="font-size:10px;color:'+(v>=target?'var(--teal)':'var(--red)')+'">'+hitMark+'</span>':'')
+      +(target?'<span style="font-size:10px;color:'+(v>=target?'var(--teal)':'var(--red)')+'">'+( v>=target?'✓':'↓')+target+'%</span>':'')
       +'</div>'
       +'<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative">'
       +'<div style="height:100%;width:'+Math.min(v,100)+'%;background:'+col+';border-radius:3px"></div>'
-      +(target?'<div style="position:absolute;top:0;left:'+target+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div>':'')
+      +(target?'<div style="position:absolute;top:0;left:'+Math.min(target,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div>':'')
       +'</div></td>';
   }
 
-  var ta=tAvg('crOEM'),tb=tAvg('crSuperYes'),tc=tAvg('crMegaYes'),td2=tAvg('optPerH');
+  // ── TABLE ROWS ──
   var rows='';
-  employees.forEach(function(e){
+  list.forEach(function(e){
     var c=COLORS[e.color%COLORS.length];
-    var r=lastRating(e.id);var rs=r?RS[r]:null;
-    var av=avgSkill(e.id);var sr=srAvg(e.id);
+    var r=lastRating(e.id); var rs=r?RS[r]:null;
     var al=checkAlerts(e.id);
-    var ep=getPerf(e.id,7);
+    var ep=getPerf(e.id,days);
     function ea(key){return ep.length?ep.reduce(function(a,x){return a+x[key];},0)/ep.length:null;}
     var em=ep.reduce(function(a,x){return a+(x.margin||0);},0);
+    var sCount=(protocols[e.id]||[]).length;
+    var tage=tageSeitLetzterSession(e.id);
+    var aFarbe=aufmerksamkeitFarbe(tage);
+    var entw=entwicklungsfelder(e.id);
+
     rows+='<tr style="cursor:pointer" onclick="selectEmp('+e.id+')">'
+      // Mitarbeiter
       +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
       +'<div style="display:flex;align-items:center;gap:9px">'
       +'<div class="av" style="width:30px;height:30px;font-size:11px;background:'+c.bg+';color:'+c.text+'">'+ini(e.name)+'</div>'
       +'<div><div style="font-weight:500">'+e.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
       +'<div style="font-size:11px;color:var(--text2)">'+e.phase+'</div></div></div></td>'
+      // CR Spalten
       +crCell(ea('crOEM'),CR_GOOD)
       +crCell(ea('crTeilweise'),null)
       +crCell(ea('crYes'),null)
       +crCell(ea('crSuperYes'),KPI_TARGETS.crSuperYes)
       +crCell(ea('crMegaYes'),KPI_TARGETS.crMegaYes)
-      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:600;color:var(--blue)">€'+em.toLocaleString('de-DE')+'</div><div style="font-size:11px;color:var(--text3)">7d total</div></td>'
+      // Marge
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--blue)">€'+em.toLocaleString('de-DE')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+days+'d</div></td>'
+      // Opt/h
       +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(ea('optPerH')!==null?ea('optPerH').toFixed(1):'—')+'</td>'
-      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(sr!==null?sr+'%':'—')+'</td>'
-      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(rs?'<span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+r+'</span>':'—')+'</td>'
+      // KPI Alerts
       +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
-      +(function(){
-        var sCount=(protocols[e.id]||[]).length;
-        var tage=tageSeitLetzterSession(e.id);
-        var aFarbe=aufmerksamkeitFarbe(tage);
-        var lsBew=lastRating(e.id);
-        var lsRS=lsBew?RS[lsBew]:null;
-        var entw=entwicklungsfelder(e.id);
-        return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:var(--purple)">'+sCount+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(lsRS?'<span class="badge" style="background:'+lsRS.bg+';color:'+lsRS.color+'">'+lsBew+'</span>':'-')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">'+(entw.length?entw.join(', '):'-')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')"><i class="ti ti-calendar-plus"></i> Planen</button></td>';
-      })()
+      // Letzte Bewertung
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(rs?'<span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+r+'</span>':'—')+'</td>'
+      // Sessions
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:var(--purple)">'+sCount+'</td>'
+      // Letzte Session
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</td>'
+      // Entwicklungsfelder
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);max-width:200px">'+(entw.length?entw.join(', '):'—')+'</td>'
+      // Planen
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
+      +'<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
       +'</tr>';
   });
 
+  // ── STAFF CARDS ──
   var cards='';
-  employees.forEach(function(e){
+  list.forEach(function(e){
     var c=COLORS[e.color%COLORS.length];
-    var r=lastRating(e.id);var rs=r?RS[r]:null;
-    var av=avgSkill(e.id);var sr=srAvg(e.id);
-    var ob=onboarding[e.id]||[];var obD=ob.filter(Boolean).length;
-    var ep=getPerf(e.id,7);
+    var r=lastRating(e.id); var rs=r?RS[r]:null;
+    var av=avgSkill(e.id);
+    var ep=getPerf(e.id,days);
     function ea(key){return ep.length?Math.round(ep.reduce(function(a,x){return a+x[key];},0)/ep.length):null;}
     var em=ep.reduce(function(a,x){return a+(x.margin||0);},0);
     var al=checkAlerts(e.id);
+    var sCount=(protocols[e.id]||[]).length;
+    var tage=tageSeitLetzterSession(e.id);
+    var aFarbe=aufmerksamkeitFarbe(tage);
+    var entw=entwicklungsfelder(e.id);
     var oem=ea('crOEM');
     var oemColor=oem!==null?(oem>=CR_GOOD?'var(--teal)':oem>=45?'var(--amber)':'var(--red)'):'var(--text3)';
+
     cards+='<div class="team-card" onclick="selectEmp('+e.id+')">'
-      +'<div class="tc-hdr"><div class="av" style="width:42px;height:42px;font-size:14px;background:'+c.bg+';color:'+c.text+'">'+ini(e.name)+'</div>'
-      +'<div style="flex:1"><div style="font-size:14px;font-weight:600">'+e.name+'</div><div style="font-size:12px;color:var(--text2)">'+e.role+'</div></div>'
-      +'<span class="phase-badge" style="background:'+phaseBg(e.phase)+';color:'+phaseCol(e.phase)+'">'+e.phase+'</span></div>'
+      // Header
+      +'<div class="tc-hdr">'
+      +'<div class="av" style="width:42px;height:42px;font-size:14px;background:'+c.bg+';color:'+c.text+'">'+ini(e.name)+'</div>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:600">'+e.name+'</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+e.role+'</div></div>'
+      +'<span class="phase-badge" style="background:'+phaseBg(e.phase)+';color:'+phaseCol(e.phase)+'">'+e.phase+'</span>'
+      +'</div>'
+      // CR OEM Balken
       +'<div style="margin-bottom:10px">'
-      +'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">CR OEM</span><span style="font-size:13px;font-weight:600;color:'+oemColor+'">'+(oem!==null?oem+'%':'—')+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+      +'<span style="font-size:11px;color:var(--text2)">CR OEM</span>'
+      +'<span style="font-size:13px;font-weight:600;color:'+oemColor+'">'+(oem!==null?oem+'%':'—')+'</span>'
+      +'</div>'
       +'<div style="height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative">'
       +(oem!==null?'<div style="height:100%;width:'+Math.min(oem,100)+'%;background:'+oemColor+';border-radius:4px"></div>':'')
-      +'<div style="position:absolute;top:0;left:'+CR_GOOD+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div></div>'
-      +'<div style="font-size:10px;color:var(--text3);margin-top:2px">Target ≥ '+CR_GOOD+'% · '+(oem!==null&&oem>=CR_GOOD?'✓ On target':'↓ Below target')+'</div></div>'
+      +'<div style="position:absolute;top:0;left:'+CR_GOOD+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div>'
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:2px">Ziel ≥ '+CR_GOOD+'% · '+(oem!==null&&oem>=CR_GOOD?'✓ Im Zielbereich':'↓ Unter Zielwert')+'</div>'
+      +'</div>'
+      // CR Grid – immer 4 Felder, feste Position
       +'<div class="tc-kpis">'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--amber);font-size:13px">'+(ea('crTeilweise')!==null?ea('crTeilweise')+'%':'—')+'</div><div class="tc-kpi-label">Teilweise</div></div>'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--blue);font-size:13px">'+(ea('crYes')!==null?ea('crYes')+'%':'—')+'</div><div class="tc-kpi-label">Yes</div></div>'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--purple);font-size:13px">'+(ea('crSuperYes')!==null?ea('crSuperYes')+'%':'—')+'</div><div class="tc-kpi-label">Super Yes</div></div>'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--teal);font-size:13px">'+(ea('crMegaYes')!==null?ea('crMegaYes')+'%':'—')+'</div><div class="tc-kpi-label">Mega Yes</div></div></div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--blue-bg);border-radius:var(--r-sm);margin-bottom:8px"><span style="font-size:11px;font-weight:500;color:var(--blue-dark)">Additional margin (7d)</span><span style="font-size:14px;font-weight:600;color:var(--blue-dark)">€'+em.toLocaleString('de-DE')+'</span></div>'
-      +(av!==null?'<div class="bar-row"><span class="bar-label">Avg. Skill</span><div class="bar-track"><div class="bar-fill" style="width:'+av+'%;background:'+(av>=80?'var(--teal)':av>=60?'var(--purple)':'var(--amber)')+'"></div></div><span class="bar-val">'+av+'%</span></div>':'')
-      +(sr!==null?'<div class="bar-row"><span class="bar-label">SolidRoad</span><div class="bar-track"><div class="bar-fill" style="width:'+sr+'%;background:'+scoreColor(sr)+'"></div></div><span class="bar-val">'+sr+'%</span></div>':'')
-      +(al.length?'<div style="margin-top:8px;padding:6px 10px;background:var(--amber-bg);border-radius:var(--r-sm);font-size:11px;color:var(--amber-dark)">⚠ '+al.map(function(a){return a.key;}).join(', ')+' below target</div>':'')
-      +(rs?'<div style="margin-top:8px;font-size:12px;color:var(--text2)">Last Session: <span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+r+'</span></div>':'')
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--amber)">'+(ea('crTeilweise')!==null?ea('crTeilweise')+'%':'—')+'</div><div class="tc-kpi-label">Teilweise</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--blue)">'+(ea('crYes')!==null?ea('crYes')+'%':'—')+'</div><div class="tc-kpi-label">Yes</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--purple)">'+(ea('crSuperYes')!==null?ea('crSuperYes')+'%':'—')+'</div><div class="tc-kpi-label">Super Yes</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--teal)">'+(ea('crMegaYes')!==null?ea('crMegaYes')+'%':'—')+'</div><div class="tc-kpi-label">Mega Yes</div></div>'
+      +'</div>'
+      // Marge – feste Position
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--blue-bg);border-radius:var(--r-sm);margin-bottom:10px">'
+      +'<span style="font-size:11px;font-weight:500;color:var(--blue-dark)">Zusätzliche Marge ('+days+'d)</span>'
+      +'<span style="font-size:14px;font-weight:600;color:var(--blue-dark)">€'+em.toLocaleString('de-DE')+'</span>'
+      +'</div>'
+      // Avg Skill – feste Position (Platzhalter wenn leer)
+      +'<div style="margin-bottom:7px">'
+      +(av!==null
+        ?'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text2);width:90px">Ø Skill</span><div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+av+'%;background:'+(av>=80?'var(--teal)':av>=60?'var(--purple)':'var(--amber)')+'"></div></div><span style="font-size:11px;color:var(--text2);width:32px;text-align:right">'+av+'%</span></div>'
+        :'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);width:90px">Ø Skill</span><span style="font-size:11px;color:var(--text3)">Noch keine Bewertung</span></div>'
+      )
+      +'</div>'
+      // Letzte Bewertung – feste Position
+      +'<div style="margin-bottom:10px">'
+      +(rs
+        ?'<div style="font-size:12px;color:var(--text2)">Letzte Bew.: <span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+r+'</span></div>'
+        :'<div style="font-size:12px;color:var(--text3)">Letzte Bew.: <span style="color:var(--text3)">—</span></div>'
+      )
+      +'</div>'
+      // Coaching Block – feste Position, immer gleich hoch
+      +'<div style="border-top:1px solid var(--border);padding-top:10px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:11px;color:var(--text2)"><i class="ti ti-calendar-event" style="font-size:12px;margin-right:3px"></i>Letzte Session: <strong style="color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</strong></span>'
+      +'<span style="font-size:11px;color:var(--text2)"><strong style="color:var(--purple)">'+sCount+'</strong> Session'+(sCount!==1?'s':'')+'</span>'
+      +'</div>'
+      +'<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')" style="padding:4px 9px;font-size:11px"><i class="ti ti-calendar-plus"></i> Planen</button>'
+      +'</div>'
+      // Entwicklungsfelder – feste Zeile, immer da
+      +'<div style="font-size:11px;color:var(--text2);min-height:18px">'
+      +(entw.length
+        ?'<span style="color:var(--amber);font-weight:600">↑ </span>'+entw.join(', ')
+        :'<span style="color:var(--text3)">Keine Entwicklungsfelder erfasst</span>'
+      )
+      +'</div>'
+      // Alerts – feste Zeile, immer da
+      +'<div style="margin-top:6px;min-height:18px">'
+      +(al.length
+        ?'<span style="font-size:11px;color:var(--red);font-weight:600">⚠ '+al.length+' KPI-Alert'+(al.length>1?'s':'')+': '+al.map(function(a){return a.key;}).join(', ')+'</span>'
+        :'<span style="font-size:11px;color:var(--teal)">✓ Alle KPIs im Zielbereich</span>'
+      )
+      +'</div>'
+      +'</div>'
       +'</div>';
   });
 
-  var oem7=ta!==null?Math.round(ta):null;
-  var sy7=tb!==null?Math.round(tb):null;
-  var my7=tc!==null?Math.round(tc):null;
+  // ── Coaching-Aufmerksamkeit Tabelle ──
+  var coachRows='';
+  list.forEach(function(e){
+    var c=COLORS[e.color%COLORS.length];
+    var r=lastRating(e.id); var rs=r?RS[r]:null;
+    var sCount=(protocols[e.id]||[]).length;
+    var tage=tageSeitLetzterSession(e.id);
+    var aFarbe=aufmerksamkeitFarbe(tage);
+    var entw=entwicklungsfelder(e.id);
+    var al=checkAlerts(e.id);
+    coachRows+='<tr style="cursor:pointer" onclick="selectEmp('+e.id+')">'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;gap:9px">'
+      +'<div class="av" style="width:30px;height:30px;font-size:11px;background:'+c.bg+';color:'+c.text+'">'+ini(e.name)+'</div>'
+      +'<div><div style="font-weight:500">'+e.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text2)">'+e.phase+(e.team?' · '+e.team:'')+'</div></div></div></td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:var(--purple)">'+sCount+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(rs?'<span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+r+'</span>':'—')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">'+(entw.length?entw.join(', '):'—')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
+      +'<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
+      +'</tr>';
+  });
+
+  // ── RENDER ──
   ma.innerHTML='<div class="topbar">'
     +'<div class="tb-left"><div class="av" style="width:40px;height:40px;font-size:17px;background:var(--purple-bg);color:var(--purple-dark)"><i class="ti ti-layout-grid"></i></div>'
-    +'<div><div class="tb-name">Teamübersicht</div><div class="tb-meta">'+employees.length+' staff · 7-day average · <span class="ftp-badge"><i class="ti ti-refresh" style="font-size:11px"></i> FTP sync active</span></div></div></div>'
+    +'<div><div class="tb-name">Teamübersicht</div>'
+    +'<div class="tb-meta">'+list.length+' Mitarbeiter · <span class="ftp-badge"><i class="ti ti-refresh" style="font-size:11px"></i> FTP sync active</span></div></div></div>'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    // Zeitraum-Auswahl
+    +'<div style="display:flex;border:1px solid var(--border2);border-radius:var(--r-md);overflow:hidden">'
+    +'<button style="padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;background:'+(days===7?'var(--purple)':'transparent')+';color:'+(days===7?'#fff':'var(--text2)')+'" onclick="setTeamRange(7)">7 Tage</button>'
+    +'<button style="padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;background:'+(days===14?'var(--purple)':'transparent')+';color:'+(days===14?'#fff':'var(--text2)')+'" onclick="setTeamRange(14)">14 Tage</button>'
+    +'<button style="padding:6px 14px;font-size:12px;font-weight:500;border:none;cursor:pointer;font-family:inherit;background:'+(days===30?'var(--purple)':'transparent')+';color:'+(days===30?'#fff':'var(--text2)')+'" onclick="setTeamRange(30)">30 Tage</button>'
     +'</div>'
+    +'</div></div>'
     +'<div class="content">'
+    // KPI Kacheln
     +'<div class="g5" style="margin-bottom:20px">'
-    +'<div class="kpi" style="border-top-color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'"><div class="kpi-label" style="color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'">Team CR OEM</div><div class="kpi-val" style="color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'">'+(oem7!==null?oem7+'%':'—')+'</div><div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+(oem7||0)+'%;background:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'"></div></div><div class="kpi-sub">Target ≥ '+CR_GOOD+'%</div></div>'
-    +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">Team Super Yes</div><div class="kpi-val" style="color:var(--purple)">'+(sy7!==null?sy7+'%':'—')+'</div><div class="kpi-sub">of all calls</div></div>'
-    +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">Team Mega Yes</div><div class="kpi-val" style="color:var(--teal)">'+(my7!==null?my7+'%':'—')+'</div><div class="kpi-sub">of all calls</div></div>'
-    +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Additional Margin</div><div class="kpi-val" style="color:var(--blue)">€'+totalMargin.toLocaleString('de-DE')+'</div><div class="kpi-sub">7-day team total</div></div>'
-    +'<div class="kpi" style="border-top-color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'"><div class="kpi-label" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+(totalAlerts>0?'Offene Alerts':'Alles im grünen Bereich')+'</div><div class="kpi-val" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+totalAlerts+'</div><div class="kpi-sub">'+(totalAlerts>0?'staff below target':'keine Alerts')+'</div></div>'
+    +'<div class="kpi" style="border-top-color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'"><div class="kpi-label" style="color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'">TEAM CR OEM</div><div class="kpi-val" style="color:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'">'+(oem7!==null?Math.round(oem7)+'%':'—')+'</div><div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+(oem7||0)+'%;background:'+(oem7!==null&&oem7>=CR_GOOD?'var(--teal)':'var(--amber)')+'"></div></div><div class="kpi-sub">Ziel ≥ '+CR_GOOD+'%</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">TEAM SUPER YES</div><div class="kpi-val" style="color:var(--purple)">'+(sy7!==null?Math.round(sy7)+'%':'—')+'</div><div class="kpi-sub">aller Gespräche</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">TEAM MEGA YES</div><div class="kpi-val" style="color:var(--teal)">'+(my7!==null?Math.round(my7)+'%':'—')+'</div><div class="kpi-sub">aller Gespräche</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">ZUSÄTZL. MARGE</div><div class="kpi-val" style="color:var(--blue)">€'+totalMargin.toLocaleString('de-DE')+'</div><div class="kpi-sub">'+days+'-Tage Team-Gesamt</div></div>'
+    +'<div class="kpi" style="border-top-color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'"><div class="kpi-label" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+(totalAlerts>0?'OFFENE ALERTS':'ALLES OK')+'</div><div class="kpi-val" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+totalAlerts+'</div><div class="kpi-sub">'+(totalAlerts>0?'unter Zielwert':'keine Alerts')+'</div></div>'
     +'</div>'
-    +(totalAlerts>0?'<div class="alert alert-warn" style="margin-bottom:18px"><i class="ti ti-alert-triangle" style="font-size:18px;color:var(--amber);flex-shrink:0"></i><div><div style="font-size:13px;font-weight:600;color:var(--amber-dark)">'+totalAlerts+' alert'+(totalAlerts!==1?'s':'')+' across the team</div><div style="font-size:12px;color:var(--amber-dark)">'+employees.filter(function(e){return checkAlerts(e.id).length>0;}).map(function(e){return e.name;}).join(', ')+'</div></div></div>':'')
-    +'<div class="sec-title" style="margin-bottom:10px">Conversion rates &amp; margin <span style="font-weight:400;color:var(--text3)">· CR as % of all calls · Good CR ≥ '+CR_GOOD+'%</span></div>'
-    +'<div class="tbl" style="margin-bottom:24px"><table><thead><tr><th style="min-width:150px">Mitarbeiter</th><th style="min-width:100px">CR OEM</th><th style="min-width:100px">Teilweise</th><th style="min-width:100px">Yes</th><th style="min-width:100px">Super Yes</th><th style="min-width:100px">Mega Yes</th><th>Margin</th><th>Opt./h</th><th>SolidRoad</th><th>Last rating</th><th>Alerts</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+    // Alert Banner
+    +(totalAlerts>0?'<div class="alert alert-warn" style="margin-bottom:18px"><i class="ti ti-alert-triangle" style="font-size:18px;color:var(--amber);flex-shrink:0"></i><div><div style="font-size:13px;font-weight:600;color:var(--amber-dark)">'+totalAlerts+' Performance-Alert'+(totalAlerts!==1?'s':'')+' im Team</div><div style="font-size:12px;color:var(--amber-dark)">'+list.filter(function(e){return checkAlerts(e.id).length>0;}).map(function(e){return e.name;}).join(', ')+'</div></div></div>':'')
+    // CR Tabelle
+    +'<div class="sec-title" style="margin-bottom:10px">Conversion Rates & Marge <span style="font-weight:400;color:var(--text3)">· CR als % aller Gespräche · Gut ≥ '+CR_GOOD+'%</span></div>'
+    +'<div class="tbl" style="margin-bottom:24px"><table><thead><tr>'
+    +'<th style="min-width:160px">Mitarbeiter</th>'
+    +'<th style="min-width:90px">CR OEM</th>'
+    +'<th style="min-width:90px">Teilweise</th>'
+    +'<th style="min-width:90px">Yes</th>'
+    +'<th style="min-width:90px">Super Yes</th>'
+    +'<th style="min-width:90px">Mega Yes</th>'
+    +'<th>Marge</th>'
+    +'<th>Opt./h</th>'
+    +'<th>Alerts</th>'
+    +'<th>Letzte Bew.</th>'
+    +'<th>Sessions</th>'
+    +'<th>Letzte Session</th>'
+    +'<th>Entwicklungsfelder</th>'
+    +'<th>Aktion</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>'
+    // Staff Cards
     +'<div class="sec-title" style="margin-bottom:12px">Mitarbeiterkarten</div>'
     +'<div class="team-grid">'+cards+'</div>'
-    +(function(){
-      var coachRows='';
-      activeEmployees().forEach(function(e){
-        var c=COLORS[e.color%COLORS.length];
-        var sCount=(protocols[e.id]||[]).length;
-        var tage=tageSeitLetzterSession(e.id);
-        var aFarbe=aufmerksamkeitFarbe(tage);
-        var lsBew=lastRating(e.id);
-        var lsRS=lsBew?RS[lsBew]:null;
-        var entw=entwicklungsfelder(e.id);
-        var al=checkAlerts(e.id);
-        coachRows+='<tr style="cursor:pointer" onclick="selectEmp('+e.id+')">'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
-          +'<div style="display:flex;align-items:center;gap:9px">'
-          +'<div class="av" style="width:30px;height:30px;font-size:11px;background:'+c.bg+';color:'+c.text+'">'+ini(e.name)+'</div>'
-          +'<div><div style="font-weight:500">'+e.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
-          +'<div style="font-size:11px;color:var(--text2)">'+e.phase+' · '+(e.team||'')+'</div></div></div></td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:var(--purple)">'+sCount+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(lsRS?'<span class="badge" style="background:'+lsRS.bg+';color:'+lsRS.color+'">'+lsBew+'</span>':'—')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">'+(entw.length?entw.join(', '):'—')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
-          +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)"><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
-          +'</tr>';
-      });
-      return '<div class="sec-title" style="margin-top:28px;margin-bottom:12px">Coaching-Aufmerksamkeit '
-        +'<span style="font-weight:400;color:var(--text3)">· Rot = über 14 Tage · Gelb = über 7 Tage ohne Session</span></div>'
-        +'<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">'
-        +'<table><thead><tr>'
-        +'<th style="min-width:160px">Mitarbeiter</th>'
-        +'<th>Sessions gesamt</th>'
-        +'<th>Letzte Session</th>'
-        +'<th>Letzte Bewertung</th>'
-        +'<th>Entwicklungsfelder</th>'
-        +'<th>KPI-Alerts</th>'
-        +'<th>Aktion</th>'
-        +'</tr></thead><tbody>'+coachRows+'</tbody></table></div>';
-    })()
+    // Coaching-Aufmerksamkeit
+    +'<div class="sec-title" style="margin-top:28px;margin-bottom:12px">Coaching-Aufmerksamkeit <span style="font-weight:400;color:var(--text3)">· Rot = über 14 Tage · Gelb = über 7 Tage ohne Session</span></div>'
+    +'<div class="tbl"><table><thead><tr>'
+    +'<th style="min-width:160px">Mitarbeiter</th>'
+    +'<th>Sessions gesamt</th>'
+    +'<th>Letzte Session</th>'
+    +'<th>Letzte Bewertung</th>'
+    +'<th>Entwicklungsfelder</th>'
+    +'<th>KPI-Alerts</th>'
+    +'<th>Aktion</th>'
+    +'</tr></thead><tbody>'+coachRows+'</tbody></table></div>'
     +'</div>';
 }
 
