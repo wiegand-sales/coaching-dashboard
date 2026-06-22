@@ -205,7 +205,7 @@ tr:hover td{background:var(--bg2);}
   <div class="sb-divider"></div>
   <div class="sb-section">Staff</div>
   <div class="emp-list" id="empList"></div>
-  <button class="sb-add" onclick="openModal('addEmpModal')"><i class="ti ti-plus"></i> Add staff member</button>
+  <button class="sb-add" onclick="openModal('addEmpModal')"><i class="ti ti-plus"></i> Mitarbeiter hinzufügen</button>
 </div>
 <div class="main" id="mainArea"></div>
 
@@ -383,8 +383,8 @@ function avgSkill(id){var p=protocols[id];if(!p||!p.length||!p[0].skills)return 
 function lastRating(id){var p=protocols[id];return(p&&p.length)?p[0].rating:null;}
 function srAvg(id){var d=solidroadData[id];if(!d||!d.simulations.length)return null;var v=d.simulations.map(function(s){return s.score;});return Math.round(v.reduce(function(a,b){return a+b;},0)/v.length);}
 function scoreColor(s){return s>=85?'var(--teal)':s>=70?'var(--purple)':'var(--amber)';}
-function phaseBg(ph){return{Active:RS['Yes'].bg,Onboarding:RS['Teilweise'].bg,Development:RS['Super Yes'].bg}[ph]||'#f0efec';}
-function phaseCol(ph){return{Active:RS['Yes'].color,Onboarding:RS['Teilweise'].color,Development:RS['Super Yes'].color}[ph]||'#6b6b67';}
+function phaseBg(ph){return{Aktiv:RS['Yes'].bg,Onboarding:RS['Teilweise'].bg,Entwicklung:RS['Super Yes'].bg}[ph]||'#f0efec';}
+function phaseCol(ph){return{Aktiv:RS['Yes'].color,Onboarding:RS['Teilweise'].color,Entwicklung:RS['Super Yes'].color}[ph]||'#6b6b67';}
 function getPerf(id,days){
   var p=performance[id]||[];
   var cutoff=new Date('2026-06-13T00:00:00');
@@ -605,6 +605,19 @@ function renderTeam(){
       +'<div style="font-size:12px;color:var(--text2)">'+e.role+'</div></div>'
       +'<span class="phase-badge" style="background:'+phaseBg(e.phase)+';color:'+phaseCol(e.phase)+'">'+e.phase+'</span>'
       +'</div>'
+      // Onboarding-Fortschritt für Onboarding-Phase
+      +(e.phase==='Onboarding'?(function(){
+        var ob=onboarding[e.id]||[];
+        var done=ob.filter(Boolean).length;
+        var total=ob.length||1;
+        var pct=Math.round(done/total*100);
+        return '<div style="background:var(--amber-bg);border-radius:var(--r-md);padding:7px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
+          +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)"><i class="ti ti-school" style="margin-right:4px"></i>Onboarding: '+done+'/'+total+' Schritte</span>'
+          +'<div style="display:flex;align-items:center;gap:6px">'
+          +'<div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--amber);border-radius:3px"></div></div>'
+          +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)">'+pct+'%</span>'
+          +'</div></div>';
+      })():'')      
       // CR OEM Balken
       +'<div style="margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
@@ -700,7 +713,7 @@ function renderTeam(){
   ma.innerHTML='<div class="topbar">'
     +'<div class="tb-left"><div class="av" style="width:40px;height:40px;font-size:17px;background:var(--purple-bg);color:var(--purple-dark)"><i class="ti ti-layout-grid"></i></div>'
     +'<div><div class="tb-name">Teamübersicht</div>'
-    +'<div class="tb-meta">'+list.length+' Mitarbeiter · <span class="ftp-badge"><i class="ti ti-refresh" style="font-size:11px"></i> FTP sync active</span></div></div></div>'
+    +'<div class="tb-meta">'+list.length+' Mitarbeiter · <span class="ftp-badge"><i class="ti ti-refresh" style="font-size:11px"></i> FTP sync aktiv</span></div></div></div>'
     +'<div style="display:flex;align-items:center;gap:8px">'
     // Zeitraum-Auswahl
     +'<div style="display:flex;border:1px solid var(--border2);border-radius:var(--r-md);overflow:hidden">'
@@ -1255,33 +1268,58 @@ function renderTab(){
   // ── EMP SETTINGS TAB ──
   if(activeTab==='emp-settings'){
     var t=empTargets(emp);
-    var COLORS_LOCAL=COLORS;
-    var swatches=COLORS_LOCAL.map(function(col,i){
-      return '<div onclick="setEmpColor('+i+')" title="'+col.bg+'" style="width:28px;height:28px;border-radius:50%;cursor:pointer;background:'+col.bg+';border:3px solid '+(emp.color===i?col.text:'transparent')+';display:inline-block;margin-right:6px;transition:all .15s"></div>';
+    var swatches=COLORS.map(function(col,i){
+      return '<div onclick="setEmpColor('+i+')" style="width:28px;height:28px;border-radius:50%;cursor:pointer;background:'+col.bg+';border:3px solid '+(emp.color===i?col.text:'transparent')+';display:inline-block;margin-right:6px;margin-bottom:6px;transition:all .15s"></div>';
     }).join('');
-    var teamOpts=allTeams().map(function(tm){return '<option'+(tm===emp.team?' selected':'')+'>'+tm+'</option>';}).join('')+'<option value="__new__">+ New team...</option>';
-    html+='<div class="card"><div class="card-title"><i class="ti ti-user"></i> Basic information</div>'
-      +'<div class="f2"><div><label>Full name</label><input type="text" id="es-name" value="'+emp.name+'"></div>'
-      +'<div><label>Role</label><select id="es-role">'+ROLES.map(function(ro){return '<option'+(ro===emp.role?' selected':'')+'>'+ro+'</option>';}).join('')+'</select></div></div>'
-      +'<div class="f3"><div><label>Phase</label><select id="es-phase"><option'+(emp.phase==='Onboarding'?' selected':'')+'>Onboarding</option><option'+(emp.phase==='Aktiv'?' selected':'')+'>Active</option><option'+(emp.phase==='Entwicklung'?' selected':'')+'>Entwicklung</option></select></div>'
+    var teamOpts=allTeams().map(function(tm){return '<option'+(tm===emp.team?' selected':'')+'>'+tm+'</option>';}).join('')+'<option value="__new__">+ Neues Team...</option>';
+    var ROLLEN=['Vertriebsmitarbeiter','Senior Vertriebsmitarbeiter','Sales Coach'];
+
+    html+='<div class="card"><div class="card-title"><i class="ti ti-user"></i> Stammdaten</div>'
+      +'<div class="f2">'
+      +'<div><label>Vollständiger Name</label><input type="text" id="es-name" value="'+emp.name+'"></div>'
+      +'<div><label>Position</label><select id="es-role">'+ROLLEN.map(function(ro){return '<option'+(ro===emp.role?' selected':'')+'>'+ro+'</option>';}).join('')+'</select></div>'
+      +'</div>'
+      +'<div class="f3">'
+      +'<div><label>Phase</label><select id="es-phase">'
+      +'<option'+(emp.phase==='Onboarding'?' selected':'')+'>Onboarding</option>'
+      +'<option'+(emp.phase==='Aktiv'?' selected':'')+'>Aktiv</option>'
+      +'<option'+(emp.phase==='Entwicklung'?' selected':'')+'>Entwicklung</option>'
+      +'</select></div>'
       +'<div><label>Team</label><select id="es-team">'+teamOpts+'</select></div>'
-      +'<div><label>Start date</label><input type="date" id="es-start" value="'+(emp.startDate||'')+'"></div></div>'
-      +'<div class="f2"><div><label>Contract</label><select id="es-contract"><option value="full"'+(emp.contract==='full'?' selected':'')+'>Vollzeit</option><option value="part"'+(emp.contract==='part'?' selected':'')+'>Teilzeit</option></select></div>'
-      +'<div><label>Hours / week</label><input type="number" id="es-hours" value="'+(emp.hours||40)+'" min="1" max="60"></div></div>'
-      +'<div style="margin-bottom:14px"><label>Avatar color</label><div style="margin-top:8px">'+swatches+'</div></div>'
-      +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveEmpEinstellungen()"><i class="ti ti-check"></i> Save changes</button></div>'
+      +'<div><label>Standort</label><input type="text" id="es-location" value="'+(emp.location||emp.team||'')+'" placeholder="z.B. Valencia"></div>'
+      +'</div>'
+      +'<div class="f3">'
+      +'<div><label>Startdatum</label><input type="date" id="es-start" value="'+(emp.startDate||'')+'"></div>'
+      +'<div><label>Anstellung</label><select id="es-contract">'
+      +'<option value="Vollzeit"'+(emp.contract==='Vollzeit'||emp.contract==='full'?' selected':'')+'>Vollzeit</option>'
+      +'<option value="Teilzeit"'+(emp.contract==='Teilzeit'||emp.contract==='part'?' selected':'')+'>Teilzeit</option>'
+      +'</select></div>'
+      +'<div><label>Stunden / Woche</label><input type="number" id="es-hours" value="'+(emp.hours||40)+'" min="1" max="60"></div>'
+      +'</div>'
+      +'<div style="margin-bottom:16px"><label>Avatar-Farbe</label><div style="margin-top:8px">'+swatches+'</div></div>'
+      +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveEmpEinstellungen()"><i class="ti ti-check"></i> Änderungen speichern</button>'
+      +'</div>'
 
-      +'<div class="card"><div class="card-title"><i class="ti ti-target"></i> Individual KPI targets</div>'
-      +'<p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5">These override global defaults for this staff member. Used in all alerts and the team overview.</p>'
-      +'<div class="g4"><div><label>CR OEM target %</label><input type="number" id="es-crOEM" value="'+t.crOEM+'" min="0" max="100"></div>'
-      +'<div><label>Super Yes target %</label><input type="number" id="es-crSY" value="'+t.crSuperYes+'" min="0" max="100"></div>'
-      +'<div><label>Mega Yes target %</label><input type="number" id="es-crMY" value="'+t.crMegaYes+'" min="0" max="100"></div>'
-      +'<div><label>Opt./Hour target</label><input type="number" id="es-opt" value="'+t.optPerH+'" step="0.1" min="0"></div></div>'
-      +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveEmpTargets()"><i class="ti ti-check"></i> Save targets</button></div>'
+      +'<div class="card"><div class="card-title"><i class="ti ti-target"></i> Individuelle KPI-Ziele</div>'
+      +'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Diese Werte überschreiben die globalen Standards für diesen Mitarbeiter und werden in allen Alerts und der Teamübersicht verwendet.</p>'
+      +'<div class="g4">'
+      +'<div><label>CR OEM Ziel %</label><input type="number" id="es-crOEM" value="'+t.crOEM+'" min="0" max="100"></div>'
+      +'<div><label>Super Yes Ziel %</label><input type="number" id="es-crSY" value="'+t.crSuperYes+'" min="0" max="100"></div>'
+      +'<div><label>Mega Yes Ziel %</label><input type="number" id="es-crMY" value="'+t.crMegaYes+'" min="0" max="100"></div>'
+      +'<div><label>Opt./Stunde Ziel</label><input type="number" id="es-opt" value="'+t.optPerH+'" step="0.1" min="0"></div>'
+      +'</div>'
+      +'<div style="padding:10px 12px;background:var(--bg2);border-radius:var(--r-md);font-size:12px;color:var(--text2);margin-bottom:14px">'
+      +'<i class="ti ti-info-circle" style="margin-right:4px;color:var(--purple)"></i>'
+      +'Globale Standards: CR OEM '+KPI_TARGETS.crOEM+'% · Super Yes '+KPI_TARGETS.crSuperYes+'% · Mega Yes '+KPI_TARGETS.crMegaYes+'% · Opt./Std. '+KPI_TARGETS.optPerH
+      +'</div>'
+      +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveEmpZiele()"><i class="ti ti-check"></i> Ziele speichern</button>'
+      +'</div>'
 
-      +'<div class="card" style="border-top:2px solid var(--amber)"><div class="card-title" style="color:var(--amber-dark)"><i class="ti ti-user-off"></i> Deactivate staff member</div>'
-      +'<p style="font-size:13px;color:var(--text2);margin-bottom:12px">Deactivated staff are hidden from the sidebar and team overview. All data is preserved and can be restored at any time.</p>'
-      +'<button class="btn btn-warn btn-sm" style="width:auto;background:var(--amber-bg);color:var(--amber-dark);border-color:var(--amber)" onclick="deactivateEmp()"><i class="ti ti-user-off"></i> Deactivate '+emp.name+'</button></div>';
+      +'<div class="card" style="border-top:2px solid var(--amber)">'
+      +'<div class="card-title" style="color:var(--amber-dark)"><i class="ti ti-user-off"></i> Mitarbeiter deaktivieren</div>'
+      +'<p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">Deaktivierte Mitarbeiter werden in der Sidebar und Teamübersicht ausgeblendet. Alle Daten bleiben vollständig erhalten und können jederzeit wiederhergestellt werden.</p>'
+      +'<button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber-dark);border-color:var(--amber)" onclick="mitarbeiterDeaktivieren()"><i class="ti ti-user-off"></i> '+emp.name+' deaktivieren</button>'
+      +'</div>';
   }
 
   tc2.innerHTML=html;
@@ -1516,6 +1554,45 @@ function sessionSpeichernNeu(){
   renderSidebar();
   renderMain();
   alert('Session geplant für '+datum+'.');
+}
+
+
+function saveEmpEinstellungen(){
+  var emp=employees.find(function(e){return e.id===selectedEmp;});
+  if(!emp)return;
+  var teamEl=document.getElementById('es-team');
+  var teamVal=teamEl?teamEl.value:'';
+  if(teamVal==='__new__'){teamVal=prompt('Neuer Team-Name:','')||emp.team;}
+  emp.name=document.getElementById('es-name').value.trim()||emp.name;
+  emp.role=document.getElementById('es-role').value;
+  emp.phase=document.getElementById('es-phase').value;
+  emp.team=teamVal||emp.team;
+  var locEl=document.getElementById('es-location');
+  if(locEl)emp.location=locEl.value.trim()||emp.team;
+  emp.startDate=document.getElementById('es-start').value;
+  emp.contract=document.getElementById('es-contract').value;
+  emp.hours=parseInt(document.getElementById('es-hours').value)||40;
+  renderSidebar();renderEmpDetail();
+}
+function saveEmpZiele(){
+  var emp=employees.find(function(e){return e.id===selectedEmp;});
+  if(!emp)return;
+  if(!emp.targets)emp.targets={};
+  emp.targets.crOEM=parseFloat(document.getElementById('es-crOEM').value)||55;
+  emp.targets.crSuperYes=parseFloat(document.getElementById('es-crSY').value)||12;
+  emp.targets.crMegaYes=parseFloat(document.getElementById('es-crMY').value)||8;
+  emp.targets.optPerH=parseFloat(document.getElementById('es-opt').value)||2.0;
+  alert('Ziele gespeichert für '+emp.name+'.');
+  renderTab();
+}
+function mitarbeiterDeaktivieren(){
+  var emp=employees.find(function(e){return e.id===selectedEmp;});
+  if(!emp)return;
+  if(!confirm('Mitarbeiter deaktivieren: '+emp.name+'?\n\nSie werden ausgeblendet. Alle Daten bleiben vollständig erhalten.'))return;
+  emp.active=false;
+  view='team';
+  renderSidebar();
+  renderMain();
 }
 
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
