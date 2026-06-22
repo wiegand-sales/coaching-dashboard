@@ -159,8 +159,8 @@ tr:hover td{background:var(--bg2);}
 .task-detail.open{display:block;}
 .task-actions{display:flex;gap:8px;margin-top:10px;}
 /* TEAM */
-.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;}
-.team-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 17px;cursor:pointer;transition:all .15s;}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;align-items:start;}
+.team-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 17px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;}
 .team-card:hover{border-color:var(--purple);}
 .tc-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
 .tc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
@@ -605,19 +605,24 @@ function renderTeam(){
       +'<div style="font-size:12px;color:var(--text2)">'+e.role+'</div></div>'
       +'<span class="phase-badge" style="background:'+phaseBg(e.phase)+';color:'+phaseCol(e.phase)+'">'+e.phase+'</span>'
       +'</div>'
-      // Onboarding-Fortschritt für Onboarding-Phase
-      +(e.phase==='Onboarding'?(function(){
+      // Onboarding-Indikator – fester Platz, immer gleich hoch
+      +(function(){
         var ob=onboarding[e.id]||[];
         var done=ob.filter(Boolean).length;
         var total=ob.length||1;
         var pct=Math.round(done/total*100);
-        return '<div style="background:var(--amber-bg);border-radius:var(--r-md);padding:7px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
-          +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)"><i class="ti ti-school" style="margin-right:4px"></i>Onboarding: '+done+'/'+total+' Schritte</span>'
-          +'<div style="display:flex;align-items:center;gap:6px">'
-          +'<div style="width:60px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--amber);border-radius:3px"></div></div>'
-          +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)">'+pct+'%</span>'
-          +'</div></div>';
-      })():'')      
+        if(e.phase==='Onboarding'){
+          return '<div style="background:var(--amber-bg);border-radius:var(--r-md);padding:7px 10px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
+            +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)"><i class="ti ti-school" style="margin-right:4px"></i>Onboarding: '+done+'/'+total+' Schritte</span>'
+            +'<div style="display:flex;align-items:center;gap:6px">'
+            +'<div style="width:60px;height:5px;background:rgba(0,0,0,.1);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--amber);border-radius:3px"></div></div>'
+            +'<span style="font-size:11px;font-weight:600;color:var(--amber-dark)">'+pct+'%</span>'
+            +'</div></div>';
+        } else {
+          // Leerer Platzhalter – gleiche Höhe wie der Onboarding-Balken
+          return '<div style="height:33px;margin-bottom:10px"></div>';
+        }
+      })()
       // CR OEM Balken
       +'<div style="margin-bottom:10px">'
       +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
@@ -646,7 +651,7 @@ function renderTeam(){
       +'<div style="margin-bottom:7px">'
       +(av!==null
         ?'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text2);width:90px">Ø Skill</span><div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+av+'%;background:'+(av>=80?'var(--teal)':av>=60?'var(--purple)':'var(--amber)')+'"></div></div><span style="font-size:11px;color:var(--text2);width:32px;text-align:right">'+av+'%</span></div>'
-        :'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);width:90px">Ø Skill</span><span style="font-size:11px;color:var(--text3)">Noch keine Bewertung</span></div>'
+        :'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;color:var(--text3);width:90px">Ø Skill</span><div style="flex:1;height:5px;background:var(--bg3);border-radius:3px"></div><span style="font-size:11px;color:var(--text3);width:32px;text-align:right">—</span></div>'
       )
       +'</div>'
       // Letzte Bewertung – feste Position
@@ -657,7 +662,7 @@ function renderTeam(){
       )
       +'</div>'
       // Coaching Block – feste Position, immer gleich hoch
-      +'<div style="border-top:1px solid var(--border);padding-top:10px">'
+      +'<div style="border-top:1px solid var(--border);margin-top:2px;padding-top:10px">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
       +'<div style="display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:11px;color:var(--text2)"><i class="ti ti-calendar-event" style="font-size:12px;margin-right:3px"></i>Letzte Session: <strong style="color:'+aFarbe+'">'+(tage===null?'Keine':tage===0?'Heute':tage+'d')+'</strong></span>'
@@ -666,14 +671,14 @@ function renderTeam(){
       +'<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();openSessionModal('+e.id+')" style="padding:4px 9px;font-size:11px"><i class="ti ti-calendar-plus"></i> Planen</button>'
       +'</div>'
       // Entwicklungsfelder – feste Zeile, immer da
-      +'<div style="font-size:11px;color:var(--text2);min-height:18px">'
+      +'<div style="font-size:11px;color:var(--text2);min-height:34px">'
       +(entw.length
         ?'<span style="color:var(--amber);font-weight:600">↑ </span>'+entw.join(', ')
         :'<span style="color:var(--text3)">Keine Entwicklungsfelder erfasst</span>'
       )
       +'</div>'
       // Alerts – feste Zeile, immer da
-      +'<div style="margin-top:6px;min-height:18px">'
+      +'<div style="margin-top:4px;min-height:20px">'
       +(al.length
         ?'<span style="font-size:11px;color:var(--red);font-weight:600">⚠ '+al.length+' KPI-Alert'+(al.length>1?'s':'')+': '+al.map(function(a){return a.key;}).join(', ')+'</span>'
         :'<span style="font-size:11px;color:var(--teal)">✓ Alle KPIs im Zielbereich</span>'
