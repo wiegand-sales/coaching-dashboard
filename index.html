@@ -253,8 +253,37 @@ tr:hover td{background:var(--bg2);}
   <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">Find your API key in SolidRoad → Settings → Integrations → API-Schlüssels.</p>
   <div class="modal-actions"><button class="btn" onclick="closeModal('srModal')">Abbrechen</button><button class="btn btn-primary" onclick="saveSRKey()"><i class="ti ti-plug"></i> Verbinden</button></div>
 </div></div>
-<script>
 
+
+
+
+
+<!-- SESSION PLANEN MODAL -->
+<div class="modal-ov hidden" id="sessionPlanenModal"><div class="modal">
+  <div class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-calendar-plus" style="color:var(--purple)"></i> Session planen</div>
+  <div class="f2" style="margin-bottom:10px">
+    <div><label>Mitarbeiter</label><select id="sessionEmpSel"></select></div>
+    <div><label>Datum</label><input type="date" id="sessionDatum"></div>
+  </div>
+  <div class="f2" style="margin-bottom:10px">
+    <div><label>Typ</label><select id="sessionTyp">
+      <option>Gesprächsbewertung</option>
+      <option>Onboarding-Session</option>
+      <option>Anlassbezogene Session</option>
+      <option>Mindset-Coaching</option>
+      <option>Einwandbehandlung Training</option>
+      <option>Abschlusstechnik Training</option>
+    </select></div>
+    <div><label>Fokusthema</label><input type="text" id="sessionThema" placeholder="z.B. Einwandbehandlung, Loop-Technik..."></div>
+  </div>
+  <div style="margin-bottom:14px"><label>Anlass / Notiz für den Coach</label><textarea id="sessionNotiz" placeholder="Warum wird diese Session eingeplant? Was soll der Coach beachten..."></textarea></div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModal('sessionPlanenModal')">Abbrechen</button>
+    <button class="btn btn-primary" onclick="sessionSpeichernNeu()"><i class="ti ti-check"></i> Session planen</button>
+  </div>
+</div></div>
+
+<script>
 // ── CONSTANTS ──
 var COLORS=[{bg:'#EEEDFE',text:'#3C3489'},{bg:'#E1F5EE',text:'#085041'},{bg:'#FAECE7',text:'#712B13'},{bg:'#FBEAF0',text:'#72243E'},{bg:'#E6F1FB',text:'#0C447C'},{bg:'#EAF3DE',text:'#27500A'}];
 var RATINGS=['Mega Yes','Super Yes','Yes','Teilweise'];
@@ -373,8 +402,6 @@ var reviews={
   5:[{id:7,type:'Onboarding-Gespräch',date:'2026-08-01',status:'geplant',notes:'',goals:'',rating:null,kpis:{}}],
 };
 
-</script>
-<script>
 // ── HELPERS ──
 function ini(n){return n.split(' ').map(function(x){return x[0];}).join('').toUpperCase().slice(0,2);}
 function fd(d){if(!d)return '';var p=d.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
@@ -416,9 +443,6 @@ function allTeams(){
 function activeEmployees(){
   return employees.filter(function(e){return e.active!==false;});
 }
-
-</script>
-<script>
 
 function empTargets(emp){return (emp&&emp.targets)?emp.targets:GLOBAL_TARGETS;}
 function allTeams(){var ts={};activeEmployees().forEach(function(e){if(e.team)ts[e.team]=1;});return Object.keys(ts).sort();}
@@ -1433,8 +1457,7 @@ function renderEinstellungen(){
     +'<div><div style="font-size:13px;font-weight:500">Sales Coaching Dashboard</div><div style="font-size:12px;color:var(--text2)">Wiegand &amp; Partner · v3.0 · Built for Peter Rode</div></div></div>'
     +'</div>';
 }
-</script>
-<script>
+
 // ── ACTIONS ──
 function setMetric(m){perfMetric=m;renderTab();}
 function setRange(r){perfRange=r;renderTab();}
@@ -1739,33 +1762,6 @@ function deactivateEmp(){
   renderSidebar();
   renderTeam();
 }
-
 </script>
-
-<!-- SESSION PLANEN MODAL -->
-<div class="modal-ov hidden" id="sessionPlanenModal"><div class="modal">
-  <div class="modal-title" style="display:flex;align-items:center;gap:8px"><i class="ti ti-calendar-plus" style="color:var(--purple)"></i> Session planen</div>
-  <div class="f2" style="margin-bottom:10px">
-    <div><label>Mitarbeiter</label><select id="sessionEmpSel"></select></div>
-    <div><label>Datum</label><input type="date" id="sessionDatum"></div>
-  </div>
-  <div class="f2" style="margin-bottom:10px">
-    <div><label>Typ</label><select id="sessionTyp">
-      <option>Gesprächsbewertung</option>
-      <option>Onboarding-Session</option>
-      <option>Anlassbezogene Session</option>
-      <option>Mindset-Coaching</option>
-      <option>Einwandbehandlung Training</option>
-      <option>Abschlusstechnik Training</option>
-    </select></div>
-    <div><label>Fokusthema</label><input type="text" id="sessionThema" placeholder="z.B. Einwandbehandlung, Loop-Technik..."></div>
-  </div>
-  <div style="margin-bottom:14px"><label>Anlass / Notiz für den Coach</label><textarea id="sessionNotiz" placeholder="Warum wird diese Session eingeplant? Was soll der Coach beachten..."></textarea></div>
-  <div class="modal-actions">
-    <button class="btn" onclick="closeModal('sessionPlanenModal')">Abbrechen</button>
-    <button class="btn btn-primary" onclick="sessionSpeichernNeu()"><i class="ti ti-check"></i> Session planen</button>
-  </div>
-</div></div>
-
 </body>
 </html>
