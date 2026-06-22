@@ -89,3 +89,34 @@ document.querySelectorAll('.modal-ov').forEach(function(m){
 });
 renderSidebar();
 renderCoachAnsicht();
+
+function neuerMitarbeiterSpeichern(){
+  var name=document.getElementById('nm-name').value.trim();
+  var rolle=document.getElementById('nm-rolle').value;
+  var phase=document.getElementById('nm-phase').value;
+  var team=document.getElementById('nm-team').value.trim();
+  var start=document.getElementById('nm-start').value;
+  if(!name)return;
+  var neu={id:Date.now(),name:name,rolle:rolle,phase:phase,farbe:mitarbeiter.length%FARBEN.length,startDatum:start,team:team||'Deutschland',vertrag:'Vollzeit',stunden:40,aktiv:true,ziele:Object.assign({},GLOBALE_ZIELE)};
+  mitarbeiter.push(neu);
+  aufgaben[neu.id]=[];
+  solidroad[neu.id]={simulationen:[]};
+  performance[neu.id]=[];
+  closeModal('neuerMitarbeiterModal');
+  renderSidebar();
+  renderCoachAnsicht();
+}
+
+// Populate session modal dropdowns on open
+var origOpen=openModal;
+openModal=function(id){
+  origOpen(id);
+  if(id==='neueSessionModal'){
+    var sel=document.getElementById('ns-mitarbeiter');
+    if(sel){
+      sel.innerHTML=aktiveMitarbeiter().map(function(m){return '<option value="'+m.id+'"'+(m.id===ausgewaehlterId?' selected':'')+'>'+m.name+'</option>';}).join('');
+    }
+    var datumEl=document.getElementById('ns-datum');
+    if(datumEl&&!datumEl.value)datumEl.value=heute();
+  }
+};
