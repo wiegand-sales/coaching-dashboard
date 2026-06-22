@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sales Coaching – Wiegand &amp; Partner</title>
+<title>SFP Coaching – Wiegand &amp; Partner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -195,7 +195,7 @@ tr:hover td{background:var(--bg2);}
 <body>
 <div class="sidebar">
   <div class="sb-header">
-    <div class="sb-logo"><div class="sb-dot"></div><span class="sb-title">Coaching Dashboard</span></div>
+    <div class="sb-logo"><div class="sb-dot"></div><span class="sb-title">SFP Coaching</span></div>
     <div class="sb-sub">Wiegand &amp; Partner</div>
   </div>
   <div class="sb-nav">
@@ -284,6 +284,7 @@ tr:hover td{background:var(--bg2);}
 </div></div>
 
 <script>
+// ── C
 // ── CONSTANTS ──
 var COLORS=[{bg:'#EEEDFE',text:'#3C3489'},{bg:'#E1F5EE',text:'#085041'},{bg:'#FAECE7',text:'#712B13'},{bg:'#FBEAF0',text:'#72243E'},{bg:'#E6F1FB',text:'#0C447C'},{bg:'#EAF3DE',text:'#27500A'}];
 var RATINGS=['Mega Yes','Super Yes','Yes','Teilweise'];
@@ -672,10 +673,10 @@ function renderTeam(){
       +'</div>'
       // CR Grid – immer 4 Felder, feste Position
       +'<div class="tc-kpis">'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--amber)">'+(ea('crTeilweise')!==null?ea('crTeilweise')+'%':'—')+'</div><div class="tc-kpi-label">Teilweise</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--amber)">'+(ea('crTeilweise')!==null?ea('crTeilweise')+'%':'—')+'</div><div class="tc-kpi-label">TW</div></div>'
       +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--blue)">'+(ea('crYes')!==null?ea('crYes')+'%':'—')+'</div><div class="tc-kpi-label">Yes</div></div>'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--purple)">'+(ea('crSuperYes')!==null?ea('crSuperYes')+'%':'—')+'</div><div class="tc-kpi-label">Super Yes</div></div>'
-      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--teal)">'+(ea('crMegaYes')!==null?ea('crMegaYes')+'%':'—')+'</div><div class="tc-kpi-label">Mega Yes</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--purple)">'+(ea('crSuperYes')!==null?ea('crSuperYes')+'%':'—')+'</div><div class="tc-kpi-label">SY</div></div>'
+      +'<div class="tc-kpi"><div class="tc-kpi-val" style="color:var(--teal)">'+(ea('crMegaYes')!==null?ea('crMegaYes')+'%':'—')+'</div><div class="tc-kpi-label">MY</div></div>'
       +'</div>'
       // Marge – feste Position
       +'<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--blue-bg);border-radius:var(--r-sm);margin-bottom:10px">'
@@ -962,8 +963,8 @@ function renderTab(){
       +'<div class="chart-toggle">'
       +'<button class="'+(perfMetric==='optPerH'?'active':'')+'" onclick="setMetric(\'optPerH\')">Opt./h</button>'
       +'<button class="'+(perfMetric==='crOEM'?'active':'')+'" onclick="setMetric(\'crOEM\')">CR OEM</button>'
-      +'<button class="'+(perfMetric==='crSuperYes'?'active':'')+'" onclick="setMetric(\'crSuperYes\')">Super Yes</button>'
-      +'<button class="'+(perfMetric==='crMegaYes'?'active':'')+'" onclick="setMetric(\'crMegaYes\')">Mega Yes</button>'
+      +'<button class="'+(perfMetric==='crSuperYes'?'active':'')+'" onclick="setMetric(\'crSuperYes\')">SY</button>'
+      +'<button class="'+(perfMetric==='crMegaYes'?'active':'')+'" onclick="setMetric(\'crMegaYes\')">MY</button>'
       +'</div>'
       +'<div class="chart-toggle">'
       +'<button class="'+(perfRange===7?'active':'')+'" onclick="setRange(7)">7d</button>'
@@ -987,7 +988,7 @@ function renderTab(){
     // Log table
     var perf=performance[emp.id]||[];
     if(perf.length>0){
-      html+='<div class="sec-title">Daily log</div><div class="tbl"><table><thead><tr><th>Date</th><th>CR OEM</th><th>Teilw.</th><th>Yes</th><th>Super Yes</th><th>Mega Yes</th><th>Opt./h</th><th>Margin</th></tr></thead><tbody>';
+      html+='<div class="sec-title">Daily log</div><div class="tbl"><table><thead><tr><th>Date</th><th>CR OEM</th><th>Teilw.</th><th>Yes</th><th>SY</th><th>MY</th><th>Opt./h</th><th>Margin</th></tr></thead><tbody>';
       perf.slice(0,20).forEach(function(row){
         html+='<tr><td>'+fd(row.date)+'</td>'
           +'<td style="color:var(--amber);font-weight:600">'+row.crOEM+'%</td>'
@@ -1079,8 +1080,8 @@ function renderTab(){
     }
     html+='</div><div><div class="sec-title">Performance (7-day avg)</div><div class="g2">'
       +'<div class="kpi" style="border-top-color:var(--amber)"><div class="kpi-label" style="color:var(--amber)">CR OEM</div><div class="kpi-val" style="color:var(--amber)">'+avb('crOEM')+(avb('crOEM')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crOEM'))>=KPI_TARGETS.crOEM?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crOEM+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">Super Yes</div><div class="kpi-val" style="color:var(--purple)">'+avb('crSuperYes')+(avb('crSuperYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crSuperYes'))>=KPI_TARGETS.crSuperYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crSuperYes+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">Mega Yes</div><div class="kpi-val" style="color:var(--teal)">'+avb('crMegaYes')+(avb('crMegaYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crMegaYes'))>=KPI_TARGETS.crMegaYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crMegaYes+'%</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">SY</div><div class="kpi-val" style="color:var(--purple)">'+avb('crSuperYes')+(avb('crSuperYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crSuperYes'))>=KPI_TARGETS.crSuperYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crSuperYes+'%</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">MY</div><div class="kpi-val" style="color:var(--teal)">'+avb('crMegaYes')+(avb('crMegaYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crMegaYes'))>=KPI_TARGETS.crMegaYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crMegaYes+'%</div></div>'
       +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Opt./Hour</div><div class="kpi-val" style="color:var(--blue)">'+avb('optPerH')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('optPerH'))>=KPI_TARGETS.optPerH?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.optPerH+'</div></div>'
       +'</div></div></div>';
     if(p.length>0){
@@ -1810,10 +1811,7 @@ function scorecardSpeichern(){
   renderSidebar();
   renderTab();
 }
-</script>
-
-<!-- SCORECARD MODAL -->
-<div class="modal-ov hidden" id="scorecardModal"><div class="modal" style="width:680px;max-width:96vw">
+="scorecardModal"><div class="modal" style="width:680px;max-width:96vw">
   <div class="modal-title"><i class="ti ti-clipboard-check" style="margin-right:8px;color:var(--purple)"></i>Session bewerten</div>
   <div id="scorecardInhalt"></div>
   <div class="modal-actions">
