@@ -23,12 +23,15 @@ var ratingCriteria=[
   {id:5,name:'Customer Rapport',cat:'Communication',target:85,desc:'Building trust and a positive relationship'},
 ];
 
+var ROLES=['Sales Representative','Sales Executive','Sales Coach'];
+var GLOBAL_TARGETS={crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0};
+
 var employees=[
-  {id:1,name:'Anna Bauer',role:'Inside Sales',phase:'Active',color:0,startDate:'2026-04-01'},
-  {id:2,name:'Markus Fischer',role:'Outside Sales',phase:'Onboarding',color:1,startDate:'2026-06-01'},
-  {id:3,name:'Sandra Klein',role:'Customer Advisor',phase:'Active',color:2,startDate:'2026-03-01'},
-  {id:4,name:'Thomas Müller',role:'Inside Sales',phase:'Active',color:3,startDate:'2026-02-01'},
-  {id:5,name:'Julia Schneider',role:'Customer Advisor',phase:'Development',color:4,startDate:'2026-05-01'},
+  {id:1,name:'Anna Bauer',role:'Sales Representative',phase:'Active',color:0,startDate:'2026-04-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
+  {id:2,name:'Markus Fischer',role:'Sales Representative',phase:'Onboarding',color:1,startDate:'2026-06-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:50,crSuperYes:10,crMegaYes:6,optPerH:1.5}},
+  {id:3,name:'Sandra Klein',role:'Sales Executive',phase:'Active',color:2,startDate:'2026-03-01',team:'Valencia',contract:'full',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
+  {id:4,name:'Thomas Müller',role:'Sales Executive',phase:'Active',color:3,startDate:'2026-02-01',team:'Germany',contract:'full',hours:40,active:true,targets:{crOEM:60,crSuperYes:15,crMegaYes:10,optPerH:2.5}},
+  {id:5,name:'Julia Schneider',role:'Sales Representative',phase:'Development',color:4,startDate:'2026-05-01',team:'Valencia',contract:'part',hours:32,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
 ];
 
 var protocols={
@@ -101,4 +104,14 @@ var tasks={
   3:[],
   4:[{id:5,text:'Document best-practice call from 11.06',description:'Write a short summary of the customer call on 11.06 where you switched the customer to own-brand. Max. 1 page.',done:false,source:'Session 11.06.2026',priority:'high',dueDate:'2026-06-16'}],
   5:[{id:6,text:'Practice needs analysis – print volume questions',description:'Prepare 5 open questions about print volume and cost per page. Practice saying them out loud.',done:false,source:'Session 09.06.2026',priority:'medium',dueDate:'2026-06-18'}],
+};
+// ── REVIEWS ──
+var reviews={
+  1:[{id:1,type:'Onboarding Review',date:'2026-07-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
+  2:[{id:2,type:'Onboarding Review',date:'2026-09-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
+  3:[{id:3,type:'Performance Review',date:'2026-06-01',status:'completed',notes:'Strong performance. Exceeded CR OEM target consistently.',goals:'Push Super Yes rate to 18%. Focus on closing technique.',rating:'Super Yes',kpis:{crOEM:61,crSuperYes:14,crMegaYes:8,optPerH:2.1}},
+     {id:4,type:'Annual Review',date:'2027-01-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
+  4:[{id:5,type:'Onboarding Review',date:'2026-05-01',status:'completed',notes:'Excellent onboarding. Best-practice example for own-brand switch.',goals:'Maintain Mega Yes rate. Document best-practice calls.',rating:'Mega Yes',kpis:{crOEM:76,crSuperYes:22,crMegaYes:15,optPerH:3.0}},
+     {id:6,type:'Performance Review',date:'2026-12-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
+  5:[{id:7,type:'Onboarding Review',date:'2026-08-01',status:'upcoming',notes:'',goals:'',rating:null,kpis:{}}],
 };
