@@ -112,11 +112,11 @@ function saveNewTask(){
 function addTaskFromCurrentProtocol(){
   var focus=document.getElementById('nf');
   var date=document.getElementById('nd');
-  var text=(focus&&focus.value.trim())?focus.value.trim():'Follow-up from session';
+  var text=(focus&&focus.value.trim())?focus.value.trim():'Nachbereitung Session';
   var src='Session '+(date?fd(date.value):'');
   if(!tasks[selectedEmp])tasks[selectedEmp]=[];
   tasks[selectedEmp].unshift({id:Date.now(),text:text,description:'',done:false,priority:'medium',dueDate:'',source:src});
-  alert('Task added. Switch to the Tasks tab to view it.');
+  alert('Aufgabe hinzugefügt. Zum Aufgaben-Tab wechseln.');
 }
 function saveNewEmp(){
   var name=document.getElementById('newName').value.trim();
@@ -132,7 +132,7 @@ function saveNewEmp(){
   closeModal('addEmpModal');
   renderSidebar();renderMain();
 }
-function saveFTP(){settings.ftpUrl=document.getElementById('ftpInput').value.trim();alert('FTP URL saved.');}
+function saveFTP(){settings.ftpUrl=document.getElementById('ftpInput').value.trim();alert('FTP-URL gespeichert.');}
 function saveTargets(){
   KPI_TARGETS.crOEM=parseFloat(document.getElementById('tOEM').value)||55;
   KPI_TARGETS.crSuperYes=parseFloat(document.getElementById('tSY').value)||12;
@@ -178,9 +178,9 @@ function completeReview(id){
 }
 
 function addReview(){
-  var type=prompt('Review type:\nOnboarding Review / Performance Review / Annual Review','Performance Review');
+  var type=prompt('Gesprächstyp:\nOnboarding-Gespräch / Performance-Gespräch / Jahresgespräch','Performance-Gespräch');
   if(!type||!type.trim())return;
-  var date=prompt('Scheduled date (YYYY-MM-DD):',today());
+  var date=prompt('Geplantes Datum (JJJJ-MM-TT):',today());
   if(!date)return;
   if(!reviews[selectedEmp])reviews[selectedEmp]=[];
   reviews[selectedEmp].push({id:Date.now(),type:type.trim(),date:date,status:date<today()?'overdue':'upcoming',notes:'',goals:'',rating:null,kpis:{}});
@@ -193,7 +193,7 @@ function saveEmpSettings(){
   if(!emp)return;
   var teamEl=document.getElementById('es-team');
   var teamVal=teamEl?teamEl.value:'';
-  if(teamVal==='__new__'){teamVal=prompt('New team name:','')||emp.team;}
+  if(teamVal==='__new__'){teamVal=prompt('Neuer Team-Name:','')||emp.team;}
   emp.name=document.getElementById('es-name').value.trim()||emp.name;
   emp.role=document.getElementById('es-role').value;
   emp.phase=document.getElementById('es-phase').value;
@@ -220,14 +220,14 @@ function saveEmpTargets(){
   emp.targets.crSuperYes=parseFloat(document.getElementById('es-crSY').value)||12;
   emp.targets.crMegaYes=parseFloat(document.getElementById('es-crMY').value)||8;
   emp.targets.optPerH=parseFloat(document.getElementById('es-opt').value)||2.0;
-  alert('Targets saved for '+emp.name+'. The team overview now uses individual targets.');
+  alert('Ziele gespeichert für '+emp.name+'. Die Teamübersicht verwendet ab jetzt die individuellen Zielwerte.');
   renderTab();
 }
 
 function deactivateEmp(){
   var emp=employees.find(function(e){return e.id===selectedEmp;});
   if(!emp)return;
-  if(!confirm('Deactivate '+emp.name+'? They will be hidden. All data is preserved and can be restored.'))return;
+  if(!confirm('Mitarbeiter deaktivieren: '+emp.name+'\nMitarbeiter wird ausgeblendet. Alle Daten bleiben erhalten.'))return;
   emp.active=false;
   view='team';
   renderSidebar();
