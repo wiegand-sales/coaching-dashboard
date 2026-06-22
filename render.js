@@ -14,10 +14,10 @@ function renderSidebar(){
   if(!el)return;
   el.innerHTML='';
   document.querySelectorAll('.sb-item').forEach(function(x){x.classList.remove('aktiv');});
+  var navOverview=document.getElementById('nav-sfp-overview');
   var navCoach=document.getElementById('nav-coach');
-  var navManager=document.getElementById('nav-manager');
+  if(ansicht==='sfp-overview'&&navOverview)navOverview.classList.add('aktiv');
   if(ansicht==='coach'&&navCoach)navCoach.classList.add('aktiv');
-  if(ansicht==='manager'&&navManager)navManager.classList.add('aktiv');
 
   aktiveMitarbeiter().forEach(function(ma){
     var f=FARBEN[ma.farbe%FARBEN.length];
@@ -37,9 +37,200 @@ function renderSidebar(){
 
 function zeigeAnsicht(a){ansicht=a;renderSidebar();renderHauptbereich();}
 function renderHauptbereich(){
-  if(ansicht==='coach')renderCoachAnsicht();
-  else if(ansicht==='manager')renderManagerAnsicht();
-  else renderCoachAnsicht();
+  if(ansicht==='sfp-overview')renderSFPOverview();
+  else if(ansicht==='coach')renderCoachAnsicht();
+  else renderSFPOverview();
+}
+
+
+// ══════════════════════════════════════════════
+// SFP OVERVIEW – kombiniert Team-KPIs + Staff Cards (erweitert) + Manager-Tabelle
+// ══════════════════════════════════════════════
+function renderSFPOverview(){
+  var ma=document.getElementById('hauptbereich');
+  if(!ma)return;
+  var liste=aktiveMitarbeiter();
+  var allPerf=liste.map(function(m){return getPerf(m.id,7);}).reduce(function(a,b){return a.concat(b);},[]);
+  function tSchnitt(k){if(!allPerf.length)return null;return allPerf.reduce(function(a,x){return a+x[k];},0)/allPerf.length;}
+  var totalAlerts=liste.reduce(function(a,m){return a+alertsPruefen(m).length;},0);
+  var totalMarge=liste.reduce(function(a,m){return a+getPerf(m.id,7).reduce(function(b,x){return b+(x.marge||0);},0);},0);
+  var oem7=tSchnitt('crOEM'),sy7=tSchnitt('crSuperYes'),my7=tSchnitt('crMegaYes');
+
+  // ── Team KPI Kacheln ──
+  var html='<div class="topbar"><div class="tb-links">'
+    +'<div style="width:40px;height:40px;border-radius:50%;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--purple)"><i class="ti ti-layout-grid"></i></div>'
+    +'<div><div class="tb-name">SFP Overview</div><div class="tb-meta">'+liste.length+' Mitarbeiter · 7-Tage-Ø · FTP-Sync aktiv</div></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-primary" onclick="planSession()"><i class="ti ti-plus"></i> Session planen</button>'
+    +'<button class="btn btn-primary" onclick="planSession()"><i class="ti ti-plus"></i> Session planen</button>'
+    +'<div class="inhalt">'
+    // ── KPI Kacheln ──
+    +'<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">'
+    +'<div class="kpi" style="border-top-color:'+(oem7!==null&&oem7>=55?'var(--teal)':'var(--amber)')+'"><div class="kpi-label" style="color:'+(oem7!==null&&oem7>=55?'var(--teal)':'var(--amber)')+'">TEAM CR OEM</div><div class="kpi-val" style="color:'+(oem7!==null&&oem7>=55?'var(--teal)':'var(--amber)')+'">'+(oem7!==null?Math.round(oem7)+'%':'—')+'</div><div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:'+(oem7||0)+'%;background:'+(oem7!==null&&oem7>=55?'var(--teal)':'var(--amber)')+'"></div></div><div class="kpi-sub">Ziel ≥ 55%</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">TEAM SUPER YES</div><div class="kpi-val" style="color:var(--purple)">'+(sy7!==null?Math.round(sy7)+'%':'—')+'</div><div class="kpi-sub">aller Gespräche</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">TEAM MEGA YES</div><div class="kpi-val" style="color:var(--teal)">'+(my7!==null?Math.round(my7)+'%':'—')+'</div><div class="kpi-sub">aller Gespräche</div></div>'
+    +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">ZUSÄTZL. MARGE</div><div class="kpi-val" style="color:var(--blue)">€'+totalMarge.toLocaleString('de-DE')+'</div><div class="kpi-sub">7-Tage Team-Gesamt</div></div>'
+    +'<div class="kpi" style="border-top-color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'"><div class="kpi-label" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+(totalAlerts>0?'OFFENE ALERTS':'ALLES OK')+'</div><div class="kpi-val" style="color:'+(totalAlerts>0?'var(--red)':'var(--teal)')+'">'+totalAlerts+'</div><div class="kpi-sub">'+(totalAlerts>0?'unter Zielwert':'keine Alerts')+'</div></div>'
+    +'</div>';
+
+  // ── Alert Banner ──
+  if(totalAlerts>0){
+    html+='<div class="alert alert-gelb" style="margin-bottom:18px"><i class="ti ti-alert-triangle" style="font-size:18px;color:var(--amber);flex-shrink:0"></i>'
+      +'<div><div style="font-size:13px;font-weight:600;color:var(--amber-dark)">'+totalAlerts+' Performance-Alert'+(totalAlerts>1?'s':'')+' im Team</div>'
+      +'<div style="font-size:12px;color:var(--amber-dark)">'+liste.filter(function(m){return alertsPruefen(m).length>0;}).map(function(m){return m.name;}).join(', ')+'</div>'
+      +'</div></div>';
+  }
+
+  // ── CR Tabelle ──
+  function crZelle(val, ziel){
+    if(val===null)return '<td style="padding:10px 14px;border-bottom:1px solid var(--border)">—</td>';
+    var v=Math.round(val);
+    var col=ziel?(v>=ziel?'var(--teal)':v>=ziel*0.85?'var(--amber)':'var(--red)'):(v>=55?'var(--teal)':v>=45?'var(--amber)':'var(--red)');
+    return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);min-width:90px">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
+      +'<span style="font-size:13px;font-weight:600;color:'+col+'">'+v+'%</span>'
+      +(ziel?'<span style="font-size:10px;color:'+(v>=ziel?'var(--teal)':'var(--red)')+'">'+( v>=ziel?'✓':'↓')+ziel+'%</span>':'')
+      +'</div>'
+      +'<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative">'
+      +'<div style="height:100%;width:'+Math.min(v,100)+'%;background:'+col+';border-radius:3px"></div>'
+      +(ziel?'<div style="position:absolute;top:0;left:'+Math.min(ziel,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.12)"></div>':'')
+      +'</div></td>';
+  }
+  var rows='';
+  liste.forEach(function(m){
+    var f=FARBEN[m.farbe%FARBEN.length];
+    var z=mitarbeiterZiele(m);
+    var ep=getPerf(m.id,7);
+    function ea(k){return ep.length?ep.reduce(function(a,x){return a+x[k];},0)/ep.length:null;}
+    var em=ep.reduce(function(a,x){return a+(x.marge||0);},0);
+    var al=alertsPruefen(m);
+    var ls=letzteSession(m.id);
+    var lsBw=ls?BW[ls.gesamtBewertung]:null;
+    var sr=srSchnitt(m.id);
+    rows+='<tr style="cursor:pointer" onclick="zeigeMADetail('+m.id+')">';
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
+      +'<div style="display:flex;align-items:center;gap:9px">'
+      +'<div class="av" style="width:30px;height:30px;font-size:11px;background:'+f.bg+';color:'+f.text+'">'+kuerzel(m.name)+'</div>'
+      +'<div><div style="font-weight:500">'+m.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text2)">'+m.phase+' · '+m.team+'</div></div></div></td>'
+      +crZelle(ea('crOEM'),z.crOEM)
+      +crZelle(ea('crTeilweise'),null)
+      +crZelle(ea('crYes'),null)
+      +crZelle(ea('crSuperYes'),z.crSuperYes)
+      +crZelle(ea('crMegaYes'),z.crMegaYes)
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)"><div style="font-weight:600;color:var(--blue)">€'+em.toLocaleString('de-DE')+'</div><div style="font-size:11px;color:var(--text3)">7d</div></td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(ea('optProStunde')!==null?ea('optProStunde').toFixed(1):'—')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(sr!==null?sr+'%':'—')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(lsBw?'<span class="badge" style="background:'+lsBw.bg+';color:'+lsBw.color+'">'+ls.gesamtBewertung+'</span>':'—')+'</td>'
+      +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(al.length?'<span style="color:var(--red);font-weight:600">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
+      +'</tr>';
+  });
+  html+='<div class="abschnitt-titel" style="margin-bottom:10px">Conversion Rates & Marge <span style="font-weight:400;color:var(--text3)">· CR als % aller Gespräche · Individuelle Zielwerte</span></div>'
+    +'<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:28px">'
+    +'<table><thead><tr><th style="min-width:160px">Mitarbeiter</th><th>CR OEM</th><th>Teilweise</th><th>Yes</th><th>Super Yes</th><th>Mega Yes</th><th>Marge</th><th>Opt./h</th><th>SolidRoad</th><th>Letzte Bew.</th><th>Alerts</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</div>';
+
+  // ── Staff Cards (erweitert) ──
+  html+='<div class="abschnitt-titel" style="margin-bottom:14px">Mitarbeiterkarten</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:28px">';
+  liste.forEach(function(m){
+    var f=FARBEN[m.farbe%FARBEN.length];
+    var z=mitarbeiterZiele(m);
+    var ep=getPerf(m.id,7);
+    function ea(k){return ep.length?Math.round(ep.reduce(function(a,x){return a+x[k];},0)/ep.length):null;}
+    var em=ep.reduce(function(a,x){return a+(x.marge||0);},0);
+    var al=alertsPruefen(m);
+    var ls=letzteSession(m.id);
+    var lsBw=ls?BW[ls.gesamtBewertung]:null;
+    var tageSeit=ls?Math.floor((new Date()-new Date(ls.datum+'T00:00:00'))/86400000):null;
+    var sw=staerkenSchwaechen(m.id);
+    var masSessions=sessionsFuerMitarbeiter(m.id);
+    var abgSessions=masSessions.filter(function(s){return s.status==='abgeschlossen';});
+    var oem=ea('crOEM');
+    var oemCol=oem!==null?(oem>=z.crOEM?'var(--teal)':oem>=z.crOEM*0.85?'var(--amber)':'var(--red)'):'var(--text3)';
+    var aufmCol=tageSeit===null?'var(--text3)':tageSeit>14?'var(--red)':tageSeit>7?'var(--amber)':'var(--teal)';
+
+    html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 17px;cursor:pointer" onclick="zeigeMADetail('+m.id+')">'
+      // Header
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+      +'<div class="av" style="width:40px;height:40px;font-size:14px;background:'+f.bg+';color:'+f.text+'">'+kuerzel(m.name)+'</div>'
+      +'<div style="flex:1"><div style="font-size:14px;font-weight:600">'+m.name+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px">'+m.rolle.replace('Vertriebsmitarbeiter','Vertrieb').replace('Senior ','Sr. ')
+      +' <span style="background:var(--blue-bg);color:var(--blue-dark);font-size:10px;font-weight:500;padding:1px 6px;border-radius:20px">'+m.team+'</span></div></div>'
+      +'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+(m.phase==='Aktiv'?BW['Yes'].bg:m.phase==='Onboarding'?BW['Teilweise'].bg:BW['Super Yes'].bg)+';color:'+(m.phase==='Aktiv'?BW['Yes'].color:m.phase==='Onboarding'?BW['Teilweise'].color:BW['Super Yes'].color)+'">'+m.phase+'</span>'
+      +'</div>'
+      // CR OEM Balken
+      +'<div style="margin-bottom:10px">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--text2)">CR OEM</span><span style="font-size:13px;font-weight:600;color:'+oemCol+'">'+(oem!==null?oem+'%':'—')+'</span></div>'
+      +'<div style="height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative">'
+      +(oem!==null?'<div style="height:100%;width:'+Math.min(oem,100)+'%;background:'+oemCol+';border-radius:4px"></div>':'')
+      +'<div style="position:absolute;top:0;left:'+Math.min(z.crOEM,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div></div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:2px">Ziel ≥ '+z.crOEM+'% · '+(oem!==null&&oem>=z.crOEM?'✓ Im Zielbereich':'↓ Unter Zielwert')+'</div>'
+      +'</div>'
+      // CR Grid
+      +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">'
+      +'<div style="background:var(--bg2);border-radius:var(--r-sm);padding:6px 8px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--amber)">'+(ea('crTeilweise')!==null?ea('crTeilweise')+'%':'—')+'</div><div style="font-size:10px;color:var(--text3)">Teilw.</div></div>'
+      +'<div style="background:var(--bg2);border-radius:var(--r-sm);padding:6px 8px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--blue)">'+(ea('crYes')!==null?ea('crYes')+'%':'—')+'</div><div style="font-size:10px;color:var(--text3)">Yes</div></div>'
+      +'<div style="background:var(--bg2);border-radius:var(--r-sm);padding:6px 8px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--purple)">'+(ea('crSuperYes')!==null?ea('crSuperYes')+'%':'—')+'</div><div style="font-size:10px;color:var(--text3)">Super Yes</div></div>'
+      +'<div style="background:var(--bg2);border-radius:var(--r-sm);padding:6px 8px;text-align:center"><div style="font-size:13px;font-weight:600;color:var(--teal)">'+(ea('crMegaYes')!==null?ea('crMegaYes')+'%':'—')+'</div><div style="font-size:10px;color:var(--text3)">Mega Yes</div></div>'
+      +'</div>'
+      // Marge
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--blue-bg);border-radius:var(--r-sm);margin-bottom:10px">'
+      +'<span style="font-size:11px;font-weight:500;color:var(--blue-dark)">Zusätzliche Marge (7d)</span>'
+      +'<span style="font-size:14px;font-weight:600;color:var(--blue-dark)">€'+em.toLocaleString('de-DE')+'</span></div>'
+      // Coaching Info
+      +'<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      +'<div style="font-size:11px;color:var(--text2)"><i class="ti ti-calendar-event" style="margin-right:4px;font-size:12px"></i>Letzte Session: <span style="font-weight:600;color:'+aufmCol+'">'+(tageSeit===null?'Noch keine':tageSeit===0?'Heute':tageSeit+'d')+'</span></div>'
+      +'<div style="font-size:11px;color:var(--text2)">'+abgSessions.length+' Session'+(abgSessions.length!==1?'s':'')+' gesamt</div>'
+      +'</div>'
+      // Stärken/Schwächen
+      +(sw?'<div style="display:flex;gap:8px;margin-bottom:8px">'
+        +'<div style="flex:1"><div style="font-size:10px;font-weight:600;color:var(--teal);margin-bottom:3px">STÄRKEN</div>'
+        +sw.staerken.slice(0,2).map(function(s){return '<div style="font-size:11px;color:var(--text2)">✓ '+s.name+'</div>';}).join('')
+        +'</div>'
+        +'<div style="flex:1"><div style="font-size:10px;font-weight:600;color:var(--amber);margin-bottom:3px">ENTWICKLUNG</div>'
+        +sw.schwaechen.slice(0,2).map(function(s){return '<div style="font-size:11px;color:var(--text2)">↑ '+s.name+'</div>';}).join('')
+        +'</div></div>':'')
+      // Letzte Bewertung + Alert + Planen Button
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +(lsBw?'<span class="badge" style="background:'+lsBw.bg+';color:'+lsBw.color+';font-size:11px">'+ls.gesamtBewertung+'</span>':'')
+      +(al.length?'<span style="font-size:11px;color:var(--red);font-weight:600">⚠ '+al.length+' Alert'+(al.length>1?'s':'')+'</span>':'')
+      +'</div>'
+      +'<button class="btn btn-sm btn-primary" onclick="event.stopPropagation();ausgewaehlterId='+m.id+';planSession()"><i class="ti ti-calendar-plus"></i> Planen</button>'
+      +'</div>'
+      +'</div></div>';
+  });
+  html+='</div>';
+
+  // ── Coaching-Aufmerksamkeit Tabelle ──
+  html+='<div class="abschnitt-titel" style="margin-bottom:12px">Coaching-Aufmerksamkeit <span style="font-weight:400;color:var(--text3)">· Rot = über 14 Tage · Gelb = über 7 Tage ohne Session</span></div>'
+    +'<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">'
+    +'<table><thead><tr><th>Mitarbeiter</th><th>Sessions gesamt</th><th>Letzte Session</th><th>Letzte Bewertung</th><th>Entwicklungsfelder</th><th>KPI-Alerts</th><th>Aktion</th></tr></thead><tbody>';
+  liste.forEach(function(m){
+    var f=FARBEN[m.farbe%FARBEN.length];
+    var masSessions=sessionsFuerMitarbeiter(m.id);
+    var abg=masSessions.filter(function(s){return s.status==='abgeschlossen';});
+    var ls=letzteSession(m.id);
+    var al=alertsPruefen(m);
+    var tageSeit=ls?Math.floor((new Date()-new Date(ls.datum+'T00:00:00'))/86400000):null;
+    var aufmCol=tageSeit===null?'var(--text3)':tageSeit>14?'var(--red)':tageSeit>7?'var(--amber)':'var(--teal)';
+    var sw=staerkenSchwaechen(m.id);
+    html+='<tr style="cursor:pointer" onclick="zeigeMADetail('+m.id+')">';
+      +'<td><div style="display:flex;align-items:center;gap:9px"><div class="av" style="width:30px;height:30px;font-size:11px;background:'+f.bg+';color:'+f.text+'">'+kuerzel(m.name)+'</div>'
+      +'<div><div style="font-weight:500">'+m.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text2)">'+m.phase+' · '+m.team+'</div></div></div></td>'
+      +'<td style="font-weight:600;color:var(--purple)">'+abg.length+'</td>'
+      +'<td style="font-weight:600;color:'+aufmCol+'">'+(tageSeit===null?'Noch keine':tageSeit===0?'Heute':tageSeit+'d vor')+'</td>'
+      +'<td>'+(ls&&BW[ls.gesamtBewertung]?'<span class="badge" style="background:'+BW[ls.gesamtBewertung].bg+';color:'+BW[ls.gesamtBewertung].color+'">'+ls.gesamtBewertung+'</span>':'—')+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+(sw&&sw.schwaechen.length?sw.schwaechen.map(function(s){return s.name;}).join(', '):'-')+'</td>'
+      +'<td>'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
+      +'<td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();ausgewaehlterId='+m.id+';planSession()"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
+      +'</tr>';
+  });
+  html+='</tbody></table></div></div>';
+  ma.innerHTML=html;
 }
 
 // ══════════════════════════════════════════════
@@ -162,7 +353,7 @@ function renderMitarbeiterDetail(){
     +'<div class="av" style="width:42px;height:42px;font-size:14px;background:'+f.bg+';color:'+f.text+'">'+kuerzel(ma.name)+'</div>'
     +'<div><div class="tb-name">'+ma.name+'</div><div class="tb-meta">'+ma.rolle+' · '+ma.team+' · '+ma.phase+(ma.startDatum?' · Start: '+datum(ma.startDatum):'')+'</div></div>'
     +'</div><div style="display:flex;gap:8px">'
-    +'<button class="btn btn-primary" onclick="openModal(\'neueSessionModal\')"><i class="ti ti-plus"></i> Session planen</button>'
+    +'<button class="btn btn-primary" onclick="planSession()"><i class="ti ti-plus"></i> Session planen</button>'
     +'</div></div>'
     +'<div class="tab-bar" id="maTabBar">'
     +'<div class="tab" data-tab="profil" onclick="switchTab(\'profil\')">Profil & Stärken</div>'
@@ -513,7 +704,7 @@ function renderManagerAnsicht(){
       +'<td>'+(ls?'<span class="badge" style="background:'+BW[ls.gesamtBewertung].bg+';color:'+BW[ls.gesamtBewertung].color+'">'+ls.gesamtBewertung+'</span>':'-')+'</td>'
       +'<td style="font-size:12px;color:var(--text2)">'+(sw&&sw.schwaechen.length?sw.schwaechen.map(function(s){return s.name;}).join(', '):'-')+'</td>'
       +'<td>'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>'
-      +'<td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();ausgewaehlterId='+m.id+';openModal(\'neueSessionModal\')"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
+      +'<td><button class="btn btn-sm btn-primary" onclick="event.stopPropagation();ausgewaehlterId='+m.id+';planSession()"><i class="ti ti-calendar-plus"></i> Planen</button></td>'
       +'</tr>';
   });
 
