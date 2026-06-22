@@ -539,6 +539,22 @@ function renderTeam(){
   var totalAlerts=list.reduce(function(a,e){return a+checkAlerts(e.id).length;},0);
   var totalMargin=list.reduce(function(a,e){return a+getPerf(e.id,days).reduce(function(b,x){return b+(x.margin||0);},0);},0);
   var oem7=tAvg('crOEM'),sy7=tAvg('crSuperYes'),my7=tAvg('crMegaYes');
+  // Für Zeitraum-Vergleich: immer auch 7d berechnen
+  var allP7=days===7?allP:list.map(function(e){return getPerf(e.id,7);}).reduce(function(a,b){return a.concat(b);},[]);
+  function tAvg7(key){if(!allP7.length)return null;return allP7.reduce(function(a,x){return a+x[key];},0)/allP7.length;}
+  var oemD=tAvg('crOEM'),syD=tAvg('crSuperYes'),myD=tAvg('crMegaYes');
+  var totalMargin7=days===7?totalMargin:list.reduce(function(a,e){return a+getPerf(e.id,7).reduce(function(b,x){return b+(x.margin||0);},0);},0);
+  function delta(vD,v7){
+    if(days===7||vD===null||v7===null)return null;
+    return Math.round(vD)-Math.round(v7);
+  }
+  function deltaHTML(d,pct){
+    if(d===null)return '';
+    var sign=d>0?'+':'';
+    var col=d>0?'var(--teal)':d<0?'var(--red)':'var(--text3)';
+    var arrow=d>0?'↑':d<0?'↓':'→';
+    return '<span style="font-size:11px;font-weight:600;color:'+col+'">'+arrow+' '+sign+d+(pct?'%':'')+'</span>';
+  }
 
   function crCell(val,target,val7){
     // val = range average, val7 = always 7d average (shown as small number top right)
@@ -762,9 +778,9 @@ function renderTeam(){
     // KPI Kacheln
     +(function(){
       var oemCol=oemD!==null&&oemD>=CR_GOOD?'var(--teal)':'var(--amber)';
-      var dOEM=delta(oemD,oem7);
-      var dSY=delta(syD,sy7);
-      var dMY=delta(myD,my7);
+      var dOEM=delta(oemD,tAvg7('crOEM'));
+      var dSY=delta(syD,tAvg7('crSuperYes'));
+      var dMY=delta(myD,tAvg7('crMegaYes'));
       var dMargin=days===7?null:(totalMargin-totalMargin7);
       return '<div class="g5" style="margin-bottom:20px">'
         // CR OEM
@@ -776,7 +792,7 @@ function renderTeam(){
         +'</div>'
         +'<div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px">'
         +'<div style="height:100%;width:'+(oemD||0)+'%;background:'+oemCol+'"></div></div>'
-        +'<div class="kpi-sub">'+(days!==7?'7d: '+(oem7!==null?Math.round(oem7)+'%':'—')+' · ':'')+'Ziel ≥ '+CR_GOOD+'%</div>'
+        +'<div class="kpi-sub">'+(days!==7?'7d: '+(tAvg7('crOEM')!==null?Math.round(tAvg7('crOEM'))+'%':'—')+' · ':'')+'Ziel ≥ '+CR_GOOD+'%</div>'
         +'</div>'
         // Super Yes
         +'<div class="kpi" style="border-top-color:var(--purple)">'
@@ -785,7 +801,7 @@ function renderTeam(){
         +'<div class="kpi-val" style="color:var(--purple)">'+(syD!==null?Math.round(syD)+'%':'—')+'</div>'
         +deltaHTML(dSY,true)
         +'</div>'
-        +'<div class="kpi-sub">'+(days!==7?'7d: '+(sy7!==null?Math.round(sy7)+'%':'—')+' · ':'')+'aller Gespräche</div>'
+        +'<div class="kpi-sub">'+(days!==7?'7d: '+(tAvg7('crSuperYes')!==null?Math.round(tAvg7('crSuperYes'))+'%':'—')+' · ':'')+'aller Gespräche</div>'
         +'</div>'
         // Mega Yes
         +'<div class="kpi" style="border-top-color:var(--teal)">'
@@ -794,7 +810,7 @@ function renderTeam(){
         +'<div class="kpi-val" style="color:var(--teal)">'+(myD!==null?Math.round(myD)+'%':'—')+'</div>'
         +deltaHTML(dMY,true)
         +'</div>'
-        +'<div class="kpi-sub">'+(days!==7?'7d: '+(my7!==null?Math.round(my7)+'%':'—')+' · ':'')+'aller Gespräche</div>'
+        +'<div class="kpi-sub">'+(days!==7?'7d: '+(tAvg7('crMegaYes')!==null?Math.round(tAvg7('crMegaYes'))+'%':'—')+' · ':'')+'aller Gespräche</div>'
         +'</div>'
         // Marge
         +'<div class="kpi" style="border-top-color:var(--blue)">'
