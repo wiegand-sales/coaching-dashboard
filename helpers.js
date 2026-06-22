@@ -28,3 +28,14 @@ function checkAlerts(id){
   return alerts;
 }
 function openTaskCount(id){return(tasks[id]||[]).filter(function(t){return!t.done;}).length;}
+function empTargets(emp){
+  return (emp&&emp.targets)?emp.targets:GLOBAL_TARGETS;
+}
+function allTeams(){
+  var ts={};
+  employees.forEach(function(e){if(e.team)ts[e.team]=1;});
+  return Object.keys(ts).sort();
+}
+function activeEmployees(){
+  return employees.filter(function(e){return e.active!==false;});
+}
