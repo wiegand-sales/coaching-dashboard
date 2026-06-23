@@ -159,8 +159,8 @@ tr:hover td{background:var(--bg2);}
 .task-detail.open{display:block;}
 .task-actions{display:flex;gap:8px;margin-top:10px;}
 /* TEAM */
-.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;align-items:start;}
-.team-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 17px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:20px;align-items:stretch;}
+.team-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:15px 17px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;height:100%;}
 .team-card:hover{border-color:var(--purple);}
 .tc-hdr{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
 .tc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
@@ -715,10 +715,10 @@ function renderTeam(){
         :'<span style="color:var(--text3)">Keine Entwicklungsfelder erfasst</span>'
       )
       +'</div>'
-      // Alerts – feste Zeile, immer da
-      +'<div style="margin-top:4px;min-height:20px">'
+      // Alerts – flex:1 damit Karte immer gleich hoch
+      +'<div style="margin-top:4px;flex:1">'
       +(al.length
-        ?'<span style="font-size:11px;color:var(--red);font-weight:600">⚠ '+al.length+' KPI-Alert'+(al.length>1?'s':'')+': '+al.map(function(a){return a.key;}).join(', ')+'</span>'
+        ?(function(){var shown=al.slice(0,2).map(function(a){return a.key;}).join(', ');var more=al.length>2?' +'+( al.length-2)+' mehr':'';return '<span style="font-size:11px;color:var(--red);font-weight:600">⚠ '+al.length+' KPI-Alert'+(al.length>1?'s:':':')+' '+shown+more+'</span>';})()
         :'<span style="font-size:11px;color:var(--teal)">✓ Alle KPIs im Zielbereich</span>'
       )
       +'</div>'
