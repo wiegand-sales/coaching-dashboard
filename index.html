@@ -557,12 +557,15 @@ function renderTeam(){
     return '<span style="font-size:11px;font-weight:600;color:'+col+'">'+arrow+' '+sign+d+(pct?'%':'')+'</span>';
   }
 
-  function crCell(val,target){
+  function crCell(val,target,dir){
+    // dir: 'gte' = gut wenn >= target (grün), 'lte' = gut wenn <= target
     if(val===null)return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);width:95px;min-width:95px;max-width:95px">—</td>';
     var v=Math.round(val);
-    var col=target
-      ?(v>=target?'var(--teal)':v>=target*0.85?'var(--amber)':'var(--red)')
-      :(v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)');
+    var ok=target===null?true:(dir==='lte'?v<=target:v>=target);
+    var near=target===null?true:(dir==='lte'?v<=target*1.15:v>=target*0.85);
+    var col=target===null
+      ?(v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)')
+      :(ok?'var(--teal)':near?'var(--amber)':'var(--red)');
     return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);width:95px;min-width:95px;max-width:95px">'      +'<span style="font-size:13px;font-weight:600;color:'+col+'">'+v+'%</span>'      +'<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative;margin-top:4px">'      +'<div style="height:100%;width:'+Math.min(v,100)+'%;background:'+col+';border-radius:3px"></div>'      +(target?'<div style="position:absolute;top:0;left:'+Math.min(target,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.2)"></div>':'')      +'</div></td>';
   }
 
@@ -588,11 +591,11 @@ function renderTeam(){
       +'<div><div style="font-weight:500">'+e.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:12px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'
       +'<div style="font-size:11px;color:var(--text2)">'+e.phase+'</div></div></div></td>'
       // CR Spalten – feste Breite, kleine 7d-Zahl oben rechts
-      +crCell(ea('crOEM'),CR_GOOD)
-      +crCell(ea('crTeilweise'),null)
-      +crCell(ea('crYes'),null)
-      +crCell(ea('crSuperYes'),KPI_TARGETS.crSuperYes.val)
-      +crCell(ea('crMegaYes'),KPI_TARGETS.crMegaYes.val)
+      +crCell(ea('crOEM'),KPI_TARGETS.crOEM.val,KPI_TARGETS.crOEM.dir)
+      +crCell(ea('crTeilweise'),KPI_TARGETS.crTeilweise.val,KPI_TARGETS.crTeilweise.dir)
+      +crCell(ea('crYes'),null,'gte')
+      +crCell(ea('crSuperYes'),KPI_TARGETS.crSuperYes.val,KPI_TARGETS.crSuperYes.dir)
+      +crCell(ea('crMegaYes'),KPI_TARGETS.crMegaYes.val,KPI_TARGETS.crMegaYes.dir)
       // Marge
       +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
       +'<div style="font-size:13px;font-weight:600;color:var(--blue)">€'+em.toLocaleString('de-DE')+'</div>'
@@ -630,7 +633,7 @@ function renderTeam(){
     var aFarbe=aufmerksamkeitFarbe(tage);
     var entw=entwicklungsfelder(e.id);
     var oem=ea('crOEM');
-    var oemColor=oem!==null?(oem>=CR_GOOD?'var(--teal)':oem>=45?'var(--amber)':'var(--red)'):'var(--text3)';
+    var oemTarget=KPI_TARGETS.crOEM.val;var oemOk=KPI_TARGETS.crOEM.dir==='lte'?oem<=oemTarget:oem>=oemTarget;var oemNear=KPI_TARGETS.crOEM.dir==='lte'?oem<=oemTarget*1.15:oem>=oemTarget*0.85;var oemColor=oem!==null?(oemOk?'var(--teal)':oemNear?'var(--amber)':'var(--red)'):'var(--text3)';
 
     cards+='<div class="team-card" onclick="selectEmp('+e.id+')">'
       // Header
@@ -668,7 +671,7 @@ function renderTeam(){
       +(oem!==null?'<div style="height:100%;width:'+Math.min(oem,100)+'%;background:'+oemColor+';border-radius:4px"></div>':'')
       +'<div style="position:absolute;top:0;left:'+CR_GOOD+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div>'
       +'</div>'
-      +'<div style="font-size:10px;color:var(--text3);margin-top:2px">Ziel ≥ '+CR_GOOD+'% · '+(oem!==null&&oem>=CR_GOOD?'✓ Im Zielbereich':'↓ Unter Zielwert')+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:2px">Ziel ≥ '+CR_GOOD+'% · '+(oem!==null&&oemOk?'✓ Im Zielbereich':'↓ Unter Zielwert')+'</div>'
       +'</div>'
       // CR Grid – immer 4 Felder, feste Position
       +'<div class="tc-kpis">'
@@ -779,7 +782,7 @@ function renderTeam(){
     +'<div class="content">'
     // KPI Kacheln
     +(function(){
-      var oemCol=oemD!==null&&oemD>=CR_GOOD?'var(--teal)':'var(--amber)';
+      var oemOk2=KPI_TARGETS.crOEM.dir==='lte'?(oemD!==null&&oemD<=KPI_TARGETS.crOEM.val):(oemD!==null&&oemD>=KPI_TARGETS.crOEM.val);var oemCol=oemD!==null&&oemOk2?'var(--teal)':'var(--amber)';
       var syCol='var(--purple)';
       var myCol='var(--teal)';
       // Feste Kachel-Struktur: Titel / Wert + Delta / Balken (8px) / Unterzeile
@@ -1818,14 +1821,22 @@ function zieleSpeichern(){
   keys.forEach(function(k){
     var dirEl=document.getElementById('dir-'+k);
     var valEl=document.getElementById('val-'+k);
-    if(dirEl&&valEl){
+    if(dirEl&&valEl&&KPI_TARGETS[k]){
       KPI_TARGETS[k].dir=dirEl.value;
       KPI_TARGETS[k].val=parseFloat(valEl.value)||KPI_TARGETS[k].val;
     }
   });
   CR_GOOD=KPI_TARGETS.crOEM.val;
-  alert('Zielwerte gespeichert.');
   renderEinstellungen();
+  var btn=document.querySelector('[onclick="zieleSpeichern()"]');
+  if(btn){
+    btn.innerHTML='<i class="ti ti-check"></i> Gespeichert!';
+    btn.style.background='var(--teal)';
+    setTimeout(function(){
+      btn.innerHTML='<i class="ti ti-check"></i> Zielwerte speichern';
+      btn.style.background='';
+    },2000);
+  }
 }
 </script>
 
