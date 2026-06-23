@@ -291,8 +291,14 @@ var RATINGS=['Mega Yes','Super Yes','Yes','Teilweise'];
 var RS={'Mega Yes':{bg:'#EAF3DE',color:'#27500A'},'Super Yes':{bg:'#EEEDFE',color:'#3C3489'},'Yes':{bg:'#E6F1FB',color:'#0C447C'},'Teilweise':{bg:'#FAEEDA',color:'#633806'}};
 var SKILLS=['Needs Analysis','Value Argumentation','Objection Handling','Trust Building','Closing Technique'];
 var SK_DE=['Bedarfsermittlung','Nutzenargumentation','Einwandbehandlung','Vertrauensaufbau','Abschlusstechnik'];
-var KPI_TARGETS={crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0};
-var CR_GOOD=55;
+var KPI_TARGETS={
+  crOEM:     {val:55, dir:'gte', label:'CR OEM'},
+  crTeilweise:{val:25, dir:'lte', label:'TW'},
+  crSuperYes:{val:12, dir:'gte', label:'SY'},
+  crMegaYes: {val:8,  dir:'gte', label:'MY'},
+  optPerH:   {val:2.0,dir:'gte', label:'Opt./Std.'},
+};
+var CR_GOOD=KPI_TARGETS.crOEM.val;
 
 // ── STATE ──
 var teamRange=7;
@@ -311,7 +317,7 @@ var ratingCriteria=[
 ];
 
 var ROLES=['Vertriebsmitarbeiter','Senior Vertriebsmitarbeiter','Sales Coach'];
-var GLOBAL_TARGETS={crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0};
+var GLOBAL_TARGETS=KPI_TARGETS;
 
 var employees=[
   {id:1,name:'Anna Bauer',role:'Sales Representative',phase:'Aktiv',color:0,startDate:'2026-04-01',team:'Deutschland',contract:'Vollzeit',hours:40,active:true,targets:{crOEM:55,crSuperYes:12,crMegaYes:8,optPerH:2.0}},
@@ -426,13 +432,19 @@ function pavg(id,key,days){
 }
 function checkAlerts(id){
   var alerts=[];
-  var oem=pavg(id,'crOEM',7),sy=pavg(id,'crSuperYes',7),opt=pavg(id,'optPerH',7);
-  if(oem!==null&&oem<CR_GOOD)alerts.push({key:'CR OEM',val:oem.toFixed(0)+'%',target:CR_GOOD+'%'});
-  if(sy!==null&&sy<KPI_TARGETS.crSuperYes)alerts.push({key:'CR SY',val:sy.toFixed(0)+'%',target:KPI_TARGETS.crSuperYes+'%'});
-  if(opt!==null&&opt<KPI_TARGETS.optPerH)alerts.push({key:'Opt./Hour',val:opt.toFixed(1),target:KPI_TARGETS.optPerH});
+  function check(key,perfKey,label,days){
+    var t=KPI_TARGETS[key];if(!t)return;
+    var v=pavg(id,perfKey,days||7);if(v===null)return;
+    var fail=t.dir==='gte'?v<t.val:v>t.val;
+    if(fail)alerts.push({key:label||t.label,val:(perfKey==='optPerH'?v.toFixed(1):v.toFixed(0)+'%'),ziel:(perfKey==='optPerH'?t.val:t.val+'%'),dir:t.dir});
+  }
+  check('crOEM','crOEM','CR OEM');
+  check('crSuperYes','crSuperYes','CR SY');
+  check('crMegaYes','crMegaYes','CR MY');
+  check('crTeilweise','crTeilweise','CR TW');
+  check('optPerH','optPerH','Opt./Std.');
   return alerts;
-}
-function openTaskCount(id){return(tasks[id]||[]).filter(function(t){return!t.done;}).length;}
+}function openTaskCount(id){return(tasks[id]||[]).filter(function(t){return!t.done;}).length;}
 function allTeams(){
   var ts={};
   employees.forEach(function(e){if(e.team)ts[e.team]=1;});
@@ -548,8 +560,10 @@ function renderTeam(){
   function crCell(val,target){
     if(val===null)return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);width:95px;min-width:95px;max-width:95px">—</td>';
     var v=Math.round(val);
-    var col=target?(v>=target?'var(--teal)':v>=target*0.85?'var(--amber)':'var(--red)'):(v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)');
-    return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);width:95px;min-width:95px;max-width:95px">'      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'      +'<span style="font-size:13px;font-weight:600;color:'+col+'">'+v+'%</span>'      +(target?'<span style="font-size:10px;color:'+(v>=target?'var(--teal)':'var(--red)')+'">'+(v>=target?'✓':'↓')+target+'%</span>':'')      +'</div>'      +'<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative">'      +'<div style="height:100%;width:'+Math.min(v,100)+'%;background:'+col+';border-radius:3px"></div>'      +(target?'<div style="position:absolute;top:0;left:'+Math.min(target,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.15)"></div>':'')      +'</div></td>';
+    var col=target
+      ?(v>=target?'var(--teal)':v>=target*0.85?'var(--amber)':'var(--red)')
+      :(v>=CR_GOOD?'var(--teal)':v>=45?'var(--amber)':'var(--red)');
+    return '<td style="padding:10px 14px;border-bottom:1px solid var(--border);width:95px;min-width:95px;max-width:95px">'      +'<span style="font-size:13px;font-weight:600;color:'+col+'">'+v+'%</span>'      +'<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative;margin-top:4px">'      +'<div style="height:100%;width:'+Math.min(v,100)+'%;background:'+col+';border-radius:3px"></div>'      +(target?'<div style="position:absolute;top:0;left:'+Math.min(target,100)+'%;height:100%;width:2px;background:rgba(0,0,0,.2)"></div>':'')      +'</div></td>';
   }
 
   // ── TABLE ROWS ──
@@ -577,8 +591,8 @@ function renderTeam(){
       +crCell(ea('crOEM'),CR_GOOD)
       +crCell(ea('crTeilweise'),null)
       +crCell(ea('crYes'),null)
-      +crCell(ea('crSuperYes'),KPI_TARGETS.crSuperYes)
-      +crCell(ea('crMegaYes'),KPI_TARGETS.crMegaYes)
+      +crCell(ea('crSuperYes'),KPI_TARGETS.crSuperYes.val)
+      +crCell(ea('crMegaYes'),KPI_TARGETS.crMegaYes.val)
       // Marge
       +'<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'
       +'<div style="font-size:13px;font-weight:600;color:var(--blue)">€'+em.toLocaleString('de-DE')+'</div>'
@@ -879,11 +893,11 @@ function renderTab(){
     var perf7=getPerf(emp.id,7);
     function a7(key){return perf7.length?(perf7.reduce(function(a,x){return a+x[key];},0)/perf7.length).toFixed(1):'—';}
     var kpis=[
-      {label:'CR OEM',key:'crOEM',color:'var(--amber)',target:KPI_TARGETS.crOEM,pct:true},
+      {label:'CR OEM',key:'crOEM',color:'var(--amber)',target:KPI_TARGETS.crOEM.val,pct:true},
       {label:'CR TW',key:'crTeilweise',color:'var(--text2)',target:null,pct:true},
-      {label:'CR SY',key:'crSuperYes',color:'var(--purple)',target:KPI_TARGETS.crSuperYes,pct:true},
-      {label:'CR MY',key:'crMegaYes',color:'var(--teal)',target:KPI_TARGETS.crMegaYes,pct:true},
-      {label:'Opt./Hour',key:'optPerH',color:'var(--blue)',target:KPI_TARGETS.optPerH,pct:false},
+      {label:'CR SY',key:'crSuperYes',color:'var(--purple)',target:KPI_TARGETS.crSuperYes.val,pct:true},
+      {label:'CR MY',key:'crMegaYes',color:'var(--teal)',target:KPI_TARGETS.crMegaYes.val,pct:true},
+      {label:'Opt./Hour',key:'optPerH',color:'var(--blue)',target:KPI_TARGETS.optPerH.val,pct:false},
     ];
     html+='<div class="g5">';
     kpis.forEach(function(k){
@@ -1032,10 +1046,10 @@ function renderTab(){
       });
     }
     html+='</div><div><div class="sec-title">Performance (7-day avg)</div><div class="g2">'
-      +'<div class="kpi" style="border-top-color:var(--amber)"><div class="kpi-label" style="color:var(--amber)">CR OEM</div><div class="kpi-val" style="color:var(--amber)">'+avb('crOEM')+(avb('crOEM')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crOEM'))>=KPI_TARGETS.crOEM?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crOEM+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">SY</div><div class="kpi-val" style="color:var(--purple)">'+avb('crSuperYes')+(avb('crSuperYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crSuperYes'))>=KPI_TARGETS.crSuperYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crSuperYes+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">MY</div><div class="kpi-val" style="color:var(--teal)">'+avb('crMegaYes')+(avb('crMegaYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crMegaYes'))>=KPI_TARGETS.crMegaYes?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crMegaYes+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Opt./Hour</div><div class="kpi-val" style="color:var(--blue)">'+avb('optPerH')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('optPerH'))>=KPI_TARGETS.optPerH?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.optPerH+'</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--amber)"><div class="kpi-label" style="color:var(--amber)">CR OEM</div><div class="kpi-val" style="color:var(--amber)">'+avb('crOEM')+(avb('crOEM')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crOEM'))>=KPI_TARGETS.crOEM.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crOEM.val+'%</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">SY</div><div class="kpi-val" style="color:var(--purple)">'+avb('crSuperYes')+(avb('crSuperYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crSuperYes'))>=KPI_TARGETS.crSuperYes.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crSuperYes.val+'%</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">MY</div><div class="kpi-val" style="color:var(--teal)">'+avb('crMegaYes')+(avb('crMegaYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crMegaYes'))>=KPI_TARGETS.crMegaYes.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crMegaYes.val+'%</div></div>'
+      +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Opt./Hour</div><div class="kpi-val" style="color:var(--blue)">'+avb('optPerH')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('optPerH'))>=KPI_TARGETS.optPerH.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.optPerH.val+'</div></div>'
       +'</div></div></div>';
     if(p.length>0){
       html+='<div class="sec-title">Session history</div><div class="sess-hist">';
@@ -1364,7 +1378,7 @@ function renderTab(){
       +'</div>'
       +'<div style="padding:10px 12px;background:var(--bg2);border-radius:var(--r-md);font-size:12px;color:var(--text2);margin-bottom:14px">'
       +'<i class="ti ti-info-circle" style="margin-right:4px;color:var(--purple)"></i>'
-      +'Globale Standards: CR OEM '+KPI_TARGETS.crOEM+'% · Super Yes '+KPI_TARGETS.crSuperYes+'% · Mega Yes '+KPI_TARGETS.crMegaYes+'% · Opt./Std. '+KPI_TARGETS.optPerH
+      +'Globale Standards: CR OEM '+KPI_TARGETS.crOEM.val+'% · Super Yes '+KPI_TARGETS.crSuperYes.val+'% · Mega Yes '+KPI_TARGETS.crMegaYes.val+'% · Opt./Std. '+KPI_TARGETS.optPerH.val
       +'</div>'
       +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveEmpZiele()"><i class="ti ti-check"></i> Ziele speichern</button>'
       +'</div>'
@@ -1400,33 +1414,67 @@ function renderTab(){
 
 // ── SETTINGS ──
 function renderEinstellungen(){
-  document.getElementById('mainArea').innerHTML=
-    '<div class="topbar"><div class="tb-left"><div class="av" style="width:40px;height:40px;font-size:17px;background:var(--bg2);color:var(--text2)"><i class="ti ti-settings"></i></div>'
-    +'<div><div class="tb-name">Einstellungen</div><div class="tb-meta">Integrations &amp; configuration</div></div></div></div>'
-    +'<div class="content" style="max-width:600px">'
-    +'<div class="sec-title" style="margin-bottom:12px">Integrations</div>'
+  var ma=document.getElementById('mainArea');
+  if(!ma)return;
+  function zielRow(key,label,einheit,step){
+    var t=KPI_TARGETS[key];
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="width:130px;font-size:13px;font-weight:500">'+label+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<select id="dir-'+key+'" style="width:60px;font-size:13px;padding:6px 8px">'
+      +'<option value="gte"'+(t.dir==='gte'?' selected':'')+'>≥</option>'
+      +'<option value="lte"'+(t.dir==='lte'?' selected':'')+'>≤</option>'
+      +'</select>'
+      +'<input type="number" id="val-'+key+'" value="'+t.val+'" step="'+(step||1)+'" min="0" max="100" style="width:80px">'
+      +'<span style="font-size:12px;color:var(--text2)">'+einheit+'</span>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-left:auto">Aktuell: '+t.dir+' '+t.val+(einheit||'')+'</div>'
+      +'</div>';
+  }
+  ma.innerHTML='<div class="topbar"><div class="tb-left">'
+    +'<div style="width:40px;height:40px;border-radius:50%;background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:17px"><i class="ti ti-settings"></i></div>'
+    +'<div><div class="tb-name">Einstellungen</div><div class="tb-meta">Globale Konfiguration & Integrationen</div></div>'
+    +'</div></div>'
+    +'<div class="content" style="max-width:680px">'
+
+    // KPI Zielwerte
+    +'<div class="sec-title" style="margin-bottom:12px">KPI-Zielwerte</div>'
+    +'<div class="card">'
+    +'<div class="card-title"><i class="ti ti-target"></i> Zielwerte & Richtung</div>'
+    +'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Lege für jede Kennzahl fest ob ein Wert größer (≥) oder kleiner (≤) als der Zielwert sein soll. Diese Werte gelten als globale Standards – können pro Mitarbeiter überschrieben werden.</p>'
+    +zielRow('crOEM','CR OEM','%',1)
+    +zielRow('crTeilweise','CR TW (Teilweise)','%',1)
+    +zielRow('crSuperYes','CR SY (Super Yes)','%',1)
+    +zielRow('crMegaYes','CR MY (Mega Yes)','%',1)
+    +zielRow('optPerH','Opt./Stunde','',0.1)
+    +'<div style="margin-top:16px">'
+    +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="zieleSpeichern()"><i class="ti ti-check"></i> Zielwerte speichern</button>'
+    +'</div></div>'
+
+    // Integrationen
+    +'<div class="sec-title" style="margin-top:8px;margin-bottom:12px">Integrationen</div>'
     +'<div class="set-row" style="cursor:pointer" onclick="openModal(\'srModal\')">'
     +'<div class="set-icon" style="background:var(--purple-bg);color:var(--purple)"><i class="ti ti-robot"></i></div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">SolidRoad</div><div style="font-size:12px;color:var(--text2)">AI-powered sales simulations</div></div>'
-    +(settings.srApiKey?'<span class="connected">Connected</span>':'<span class="disconnected">Not connected</span>')
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">SolidRoad</div><div style="font-size:12px;color:var(--text2)">KI-gestützte Vertriebssimulationen</div></div>'
+    +(settings.srApiKey?'<span class="connected">Verbunden</span>':'<span class="disconnected">Nicht verbunden</span>')
     +'</div>'
-    +'<div class="set-row"><div class="set-icon" style="background:var(--teal-bg);color:var(--teal)"><i class="ti ti-refresh"></i></div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">FTP Data Sync</div><div style="font-size:12px;color:var(--text2)">Performance CSV auto-import</div>'
-    +'<div style="margin-top:8px"><input type="url" id="ftpInput" placeholder="ftp://yourserver.com/performance/" value="'+settings.ftpUrl+'" style="font-size:12px"></div></div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="connected">Active</span><button class="btn btn-sm btn-primary" onclick="saveFTP()">Save</button></div></div>'
-    +'<div class="set-row"><div class="set-icon" style="background:var(--amber-bg);color:var(--amber)"><i class="ti ti-brand-github"></i></div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">GitHub Pages</div><div style="font-size:12px;color:var(--text2)">wiegand-sales.github.io/coaching-dashboard</div></div>'
-    +'<span class="disconnected">Pending</span></div>'
-    +'<div class="sec-title" style="margin-top:24px;margin-bottom:12px">KPI Targets</div>'
-    +'<div class="card"><div class="card-title"><i class="ti ti-target"></i> Performance targets (used for alerts)</div>'
-    +'<div class="g4"><div><label>CR OEM target %</label><input type="number" id="tOEM" value="'+KPI_TARGETS.crOEM+'"></div>'
-    +'<div><label>Super Yes target %</label><input type="number" id="tSY" value="'+KPI_TARGETS.crSuperYes+'"></div>'
-    +'<div><label>Mega Yes target %</label><input type="number" id="tMY" value="'+KPI_TARGETS.crMegaYes+'"></div>'
-    +'<div><label>Opt./Hour target</label><input type="number" id="tOpt" value="'+KPI_TARGETS.optPerH+'"></div></div>'
-    +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="saveTargets()"><i class="ti ti-check"></i> Save targets</button></div>'
-    +'<div class="sec-title" style="margin-top:4px;margin-bottom:12px">About</div>'
-    +'<div class="set-row"><div class="set-icon" style="background:var(--bg2);color:var(--text2)"><i class="ti ti-info-circle"></i></div>'
-    +'<div><div style="font-size:13px;font-weight:500">Sales Coaching Dashboard</div><div style="font-size:12px;color:var(--text2)">Wiegand &amp; Partner · v3.0 · Built for Peter Rode</div></div></div>'
+    +'<div class="set-row">'
+    +'<div class="set-icon" style="background:var(--teal-bg);color:var(--teal)"><i class="ti ti-refresh"></i></div>'
+    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">FTP Datensync</div>'
+    +'<div style="font-size:12px;color:var(--text2)">Performance CSV Auto-Import</div>'
+    +'<div style="margin-top:8px"><input type="url" id="ftpInput" placeholder="ftp://server.com/performance/" value="'+settings.ftpUrl+'" style="font-size:12px"></div>'
+    +'</div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+    +'<span class="connected">Aktiv</span>'
+    +'<button class="btn btn-sm btn-primary" onclick="saveFTP()">Speichern</button>'
+    +'</div></div>'
+
+    // Über
+    +'<div class="sec-title" style="margin-top:8px;margin-bottom:12px">Über</div>'
+    +'<div class="set-row">'
+    +'<div class="set-icon" style="background:var(--bg2);color:var(--text2)"><i class="ti ti-info-circle"></i></div>'
+    +'<div><div style="font-size:13px;font-weight:500">SFP Coaching Dashboard</div>'
+    +'<div style="font-size:12px;color:var(--text2)">Wiegand &amp; Partner · v4.0 · Built for Peter Rode</div></div>'
+    +'</div>'
     +'</div>';
 }
 
@@ -1571,10 +1619,10 @@ function saveNewEmp(){
 }
 function saveFTP(){settings.ftpUrl=document.getElementById('ftpInput').value.trim();alert('FTP-URL gespeichert.');}
 function saveTargets(){
-  KPI_TARGETS.crOEM=parseFloat(document.getElementById('tOEM').value)||55;
-  KPI_TARGETS.crSuperYes=parseFloat(document.getElementById('tSY').value)||12;
-  KPI_TARGETS.crMegaYes=parseFloat(document.getElementById('tMY').value)||8;
-  KPI_TARGETS.optPerH=parseFloat(document.getElementById('tOpt').value)||2;
+  KPI_TARGETS.crOEM.val=parseFloat(document.getElementById('tOEM').value)||55;
+  KPI_TARGETS.crSuperYes.val=parseFloat(document.getElementById('tSY').value)||12;
+  KPI_TARGETS.crMegaYes.val=parseFloat(document.getElementById('tMY').value)||8;
+  KPI_TARGETS.optPerH.val=parseFloat(document.getElementById('tOpt').value)||2;
   renderSettings();
 }
 function saveSRKey(){
@@ -1763,6 +1811,21 @@ function scorecardSpeichern(){
   closeModal('scorecardModal');
   renderSidebar();
   renderTab();
+}
+
+function zieleSpeichern(){
+  var keys=['crOEM','crTeilweise','crSuperYes','crMegaYes','optPerH'];
+  keys.forEach(function(k){
+    var dirEl=document.getElementById('dir-'+k);
+    var valEl=document.getElementById('val-'+k);
+    if(dirEl&&valEl){
+      KPI_TARGETS[k].dir=dirEl.value;
+      KPI_TARGETS[k].val=parseFloat(valEl.value)||KPI_TARGETS[k].val;
+    }
+  });
+  CR_GOOD=KPI_TARGETS.crOEM.val;
+  alert('Zielwerte gespeichert.');
+  renderEinstellungen();
 }
 </script>
 
