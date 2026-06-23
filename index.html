@@ -193,13 +193,17 @@ tr:hover td{background:var(--bg2);}
 </style>
 </head>
 <body>
+
+
+
 <div class="sidebar">
   <div class="sb-header">
     <div class="sb-logo"><div class="sb-dot"></div><span class="sb-title">SFP Coaching</span></div>
     <div class="sb-sub">Wiegand &amp; Partner</div>
   </div>
   <div class="sb-nav">
-    <div class="sb-item" id="nav-team" onclick="showView('team')"><i class="ti ti-layout-grid"></i> Team Overview</div>
+    <div class="sb-item" id="nav-team" onclick="showView('team')"><i class="ti ti-layout-grid"></i> SFP Team</div>
+    <div class="sb-item" id="nav-coaching" onclick="showView('coaching')"><i class="ti ti-calendar-event"></i> SFP Coaching</div>
     <div class="sb-item" id="nav-settings" onclick="showView('settings')"><i class="ti ti-settings"></i> Settings</div>
   </div>
   <div class="sb-divider"></div>
@@ -283,7 +287,260 @@ tr:hover td{background:var(--bg2);}
   </div>
 </div></div>
 
-<script>
+<script>function renderCoachingAnsicht(){
+  var ma=document.getElementById('mainArea');if(!ma)return;
+  var heute=today(),hD=new Date(heute+'T00:00:00');
+  var liste=employees.filter(function(e){return e.active!==false;});
+  var all=[];
+  liste.forEach(function(emp){
+    (protocols[emp.id]||[]).forEach(function(p){
+      all.push({eid:emp.id,en:emp.name,d:p.date,r:p.rating,f:p.focus||'',s:p.status||'abgeschlossen',t:p.typ||''});
+    });
+  });
+  all.sort(function(a,b){return b.d.localeCompare(a.d);});
+  var gep=all.filter(function(x){return x.d>=heute&&x.s==='geplant';}).sort(function(a,b){return a.d.localeCompare(b.d);});
+  var abg=all.filter(function(x){return x.s==='abgeschlossen';});
+  function ec(id){var e=employees.find(function(x){return x.id===id;});return e?COLORS[e.color%COLORS.length]:{bg:'#EEEDFE',text:'#3C3489'};}
+  function wday(d){return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{weekday:'short'});}
+  function mday(d){var dt=new Date(d+'T00:00:00'),m=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];return dt.getDate()+'. '+m[dt.getMonth()];}
+  function tdiff(d){var df=Math.round((new Date(d+'T00:00:00')-hD)/86400000);return df===0?'Heute':df===1?'Morgen':df<0?Math.abs(df)+'d her':'in '+df+'d';}
+  function sessIn(days){var cut=new Date(hD);cut.setDate(cut.getDate()-days);var cs=cut.toISOString().slice(0,10);return abg.filter(function(x){return x.d>=cs&&x.d<=heute;}).length;}
+  var s7=sessIn(7),s14=sessIn(14),s30=sessIn(30);
+
+  // 30 Tage Daten für Linien-Chart
+  var spark=[];
+  for(var i=29;i>=0;i--){
+    var dt=new Date(hD);dt.setDate(dt.getDate()-i);
+    var ds=dt.toISOString().slice(0,10);
+    var cnt=abg.filter(function(x){return x.d===ds;}).length;
+    spark.push({d:ds,n:cnt,day:dt.getDate(),isH:ds===heute});
+  }
+  var maxN=Math.max.apply(null,spark.map(function(x){return x.n;}))||1;
+
+  // Linien-Chart als SVG
+  function buildChart(){
+    var W=900,H=120,padL=28,padR=12,padT=18,padB=28;
+    var cW=W-padL-padR,cH=H-padT-padB;
+    var days=[];
+    for(var i=-14;i<=14;i++){
+      var dt=new Date(hD);dt.setDate(dt.getDate()+i);
+      var ds=dt.toISOString().slice(0,10);
+      var cnt=i>0
+        ?all.filter(function(x){return x.d===ds&&x.s==='geplant';}).length
+        :abg.filter(function(x){return x.d===ds;}).length;
+      days.push({ds:ds,n:cnt,day:dt.getDate(),future:i>0,isH:i===0});
+    }
+    var maxN=Math.max.apply(null,days.map(function(x){return x.n;}))||1;
+    var nD=days.length;
+    function xP(idx){return padL+Math.round(idx/(nD-1)*cW);}
+    function yP(n){return padT+cH-Math.round(n/maxN*cH);}
+    var hIdx=14,hX=xP(hIdx),bY=padT+cH;
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;overflow:visible">';
+    for(var g=0;g<=maxN;g++){
+      var gy=yP(g);
+      svg+='<line x1="'+padL+'" y1="'+gy+'" x2="'+(W-padR)+'" y2="'+gy+'" stroke="var(--border)" stroke-width="0.5"/>';
+      if(g>0)svg+='<text x="'+(padL-5)+'" y="'+gy+'" text-anchor="end" dominant-baseline="central" font-size="9" fill="var(--text3)">'+g+'</text>';
+    }
+    svg+='<line x1="'+padL+'" y1="'+bY+'" x2="'+(W-padR)+'" y2="'+bY+'" stroke="var(--border)" stroke-width="1"/>';
+    svg+='<defs>'+
+      '<linearGradient id="gPast" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#534AB7" stop-opacity="0.3"/><stop offset="100%" stop-color="#534AB7" stop-opacity="0.02"/></linearGradient>'+
+      '<linearGradient id="gFut" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#534AB7" stop-opacity="0.12"/><stop offset="100%" stop-color="#534AB7" stop-opacity="0"/></linearGradient>'+
+      '</defs>';
+    var pPts=days.slice(0,hIdx+1);
+    var pArea='M '+xP(0)+' '+bY+' L '+xP(0)+' '+yP(pPts[0].n);
+    pPts.forEach(function(d,i){if(i===0)return;var px=xP(i-1),py=yP(pPts[i-1].n),cx=xP(i),cy=yP(d.n),mx=px+(cx-px)*0.5;pArea+=' C '+mx+' '+py+','+mx+' '+cy+','+cx+' '+cy;});
+    pArea+=' L '+hX+' '+bY+' Z';
+    svg+='<path d="'+pArea+'" fill="url(#gPast)"/>';
+    var pLine='M '+xP(0)+' '+yP(pPts[0].n);
+    pPts.forEach(function(d,i){if(i===0)return;var px=xP(i-1),py=yP(pPts[i-1].n),cx=xP(i),cy=yP(d.n),mx=px+(cx-px)*0.5;pLine+=' C '+mx+' '+py+','+mx+' '+cy+','+cx+' '+cy;});
+    svg+='<path d="'+pLine+'" fill="none" stroke="#534AB7" stroke-width="2"/>';
+    var fPts=days.slice(hIdx);
+    var fArea='M '+hX+' '+bY+' L '+hX+' '+yP(fPts[0].n);
+    fPts.forEach(function(d,i){if(i===0)return;var px=xP(hIdx+i-1),py=yP(fPts[i-1].n),cx=xP(hIdx+i),cy=yP(d.n),mx=px+(cx-px)*0.5;fArea+=' C '+mx+' '+py+','+mx+' '+cy+','+cx+' '+cy;});
+    fArea+=' L '+xP(nD-1)+' '+bY+' Z';
+    svg+='<path d="'+fArea+'" fill="url(#gFut)"/>';
+    var fLine='M '+hX+' '+yP(fPts[0].n);
+    fPts.forEach(function(d,i){if(i===0)return;var px=xP(hIdx+i-1),py=yP(fPts[i-1].n),cx=xP(hIdx+i),cy=yP(d.n),mx=px+(cx-px)*0.5;fLine+=' C '+mx+' '+py+','+mx+' '+cy+','+cx+' '+cy;});
+    svg+='<path d="'+fLine+'" fill="none" stroke="#534AB7" stroke-width="2" stroke-dasharray="5,3" opacity="0.7"/>';
+    svg+='<line x1="'+hX+'" y1="'+padT+'" x2="'+hX+'" y2="'+bY+'" stroke="#E53935" stroke-width="2"/>';
+    svg+='<text x="'+hX+'" y="'+(padT-4)+'" text-anchor="middle" font-size="9" fill="#E53935" font-weight="600">Heute</text>';
+    days.forEach(function(d,i){
+      if(d.n>0){
+        var x=xP(i),y=yP(d.n);
+        svg+='<circle cx="'+x+'" cy="'+y+'" r="3.5" fill="white" stroke="#534AB7" stroke-width="1.5" opacity="'+(d.future?0.65:1)+'"/>';
+        if(d.n>1)svg+='<text x="'+x+'" y="'+(y-8)+'" text-anchor="middle" font-size="9" fill="#534AB7" font-weight="600" opacity="'+(d.future?0.65:1)+'">'+d.n+'</text>';
+      }
+    });
+    days.forEach(function(d,i){
+      if(i===0||i===7||i===14||i===21||i===28){
+        svg+='<text x="'+xP(i)+'" y="'+(H-5)+'" text-anchor="middle" font-size="9" fill="'+(d.isH?'#E53935':'var(--text3)')+'" font-weight="'+(d.isH?600:400)+'">'+d.day+'</text>';
+      }
+    });
+    svg+='</svg>';
+    return svg;
+  }
+
+  // Kalender
+  function buildKal(){
+    var k='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px">';
+    ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(function(t){k+='<div style="font-size:10px;font-weight:600;color:var(--text3);text-align:center;padding:2px 0">'+t+'</div>';});
+    k+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">';
+    var off=hD.getDay();off=off===0?6:off-1;
+    for(var i=0;i<off;i++)k+='<div></div>';
+    for(var d=0;d<30;d++){
+      var dt=new Date(hD);dt.setDate(dt.getDate()+d);
+      var ds=dt.toISOString().slice(0,10),isH=ds===heute;
+      var sg=all.filter(function(x){return x.d===ds&&x.s==='geplant';});
+      var sa=all.filter(function(x){return x.d===ds&&x.s!=='geplant';});
+      var bdrCol=isH?'var(--purple)':'var(--border)';
+      var bgCol=isH?'var(--purple-bg)':'var(--bg)';
+      var ftCol=isH?'var(--purple)':'var(--text)';
+      k+='<div data-d="'+ds+'" onclick="kalKlick(this.dataset.d)" style="cursor:pointer;border:1px solid '+bdrCol+';background:'+bgCol+';border-radius:5px;padding:5px;min-height:52px">';
+      k+='<div style="font-size:11px;font-weight:'+(isH?600:400)+';color:'+ftCol+';margin-bottom:3px">'+dt.getDate()+'</div>';
+      sg.slice(0,2).forEach(function(x){var c=ec(x.eid);k+='<div style="font-size:9px;background:'+c.bg+';color:'+c.text+';border-radius:2px;padding:1px 4px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+x.en.split(' ')[0]+'</div>';});
+      sa.slice(0,3).forEach(function(x){var r2=x.r?RS[x.r]:null;k+='<span style="width:7px;height:7px;border-radius:50%;background:'+(r2?r2.bg:'var(--bg3)')+';display:inline-block;margin-right:2px" title="'+x.en+'"></span>';});
+      k+='</div>';
+    }
+    return k+'</div>';
+  }
+
+  var h='<div class="topbar"><div class="tb-left">'+
+    '<div style="width:40px;height:40px;border-radius:50%;background:var(--purple-bg);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:17px"><i class="ti ti-calendar-event"></i></div>'+
+    '<div><div class="tb-name">SFP Coaching</div><div class="tb-meta">'+liste.length+' Mitarbeiter · '+gep.length+' geplant · '+abg.length+' abgeschlossen</div></div></div>'+
+    '<button class="btn btn-primary" onclick="openSessionModal(0)"><i class="ti ti-plus"></i> Session planen</button>'+
+    '</div><div class="content">';
+
+  // ══ ZEILE 1: 3 Stat-Kacheln + Linien-Chart (volle Breite) ══
+  h+='<div style="display:grid;grid-template-columns:repeat(3,140px) 1fr;gap:12px;margin-bottom:16px;align-items:stretch">';
+  h+='<div style="background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--purple);border-radius:var(--r-lg);padding:14px 16px"><div style="font-size:10px;font-weight:600;color:var(--purple);letter-spacing:.05em;margin-bottom:4px">7 TAGE</div><div style="font-size:32px;font-weight:700;color:var(--purple);line-height:1">'+s7+'</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Sessions</div></div>';
+  h+='<div style="background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--teal);border-radius:var(--r-lg);padding:14px 16px"><div style="font-size:10px;font-weight:600;color:var(--teal);letter-spacing:.05em;margin-bottom:4px">14 TAGE</div><div style="font-size:32px;font-weight:700;color:var(--teal);line-height:1">'+s14+'</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Sessions</div></div>';
+  h+='<div style="background:var(--bg);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:var(--r-lg);padding:14px 16px"><div style="font-size:10px;font-weight:600;color:var(--blue);letter-spacing:.05em;margin-bottom:4px">30 TAGE</div><div style="font-size:32px;font-weight:700;color:var(--blue);line-height:1">'+s30+'</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Sessions</div></div>';
+  h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px"><div style="font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.05em;margin-bottom:8px">SESSION-VERLAUF – LETZTE 30 TAGE</div>'+buildChart()+'</div>';
+  h+='</div>';
+
+  // ══ ZEILE 2: Kalender volle Breite ══
+  h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  h+='<div class="sec-title" style="margin:0">Kalender – nächste 30 Tage <span style="font-weight:400;font-size:12px;color:var(--text3)">· Klick auf Tag = Session planen</span></div>';
+  h+='<div style="display:flex;gap:10px"><span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;border:1px solid var(--purple);background:var(--purple-bg);display:inline-block"></span>Heute</span><span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#EEEDFE;display:inline-block"></span>Geplant</span><span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:#9FE1CB;display:inline-block"></span>Abgeschlossen</span></div>';
+  h+='</div>'+buildKal()+'</div>';
+
+  // ══ ZEILE 3: Geplante Sessions | Letzte Sessions ══
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch">';
+
+  // Geplante
+  h+='<div style="display:flex;flex-direction:column"><div class="sec-title" style="margin-bottom:10px">Geplante Sessions'+(gep.length?' <span style="background:var(--purple-bg);color:var(--purple);font-size:11px;padding:1px 8px;border-radius:20px;margin-left:6px">'+gep.length+'</span>':'')+'</div>';
+  if(!gep.length){
+    h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;text-align:center;color:var(--text3);flex:1"><i class="ti ti-calendar-off" style="font-size:28px;display:block;margin-bottom:8px"></i>Keine Sessions geplant<div style="margin-top:10px"><button class="btn btn-sm btn-primary" onclick="openSessionModal(0)"><i class="ti ti-plus"></i> Jetzt planen</button></div></div>';
+  } else {
+    h+='<div style="display:flex;flex-direction:column;gap:8px;flex:1">';
+    gep.forEach(function(x){
+      var c=ec(x.eid),dt2=new Date(x.d+'T00:00:00'),df=Math.round((dt2-hD)/86400000);
+      h+='<div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:var(--r-lg);padding:11px 14px;display:flex;align-items:center;gap:12px">';
+      h+='<div style="min-width:46px;text-align:center;background:var(--purple-bg);border-radius:var(--r-md);padding:6px 8px;flex-shrink:0"><div style="font-size:10px;font-weight:600;color:var(--purple)">'+wday(x.d)+'</div><div style="font-size:21px;font-weight:700;color:var(--purple);line-height:1.1">'+dt2.getDate()+'</div></div>';
+      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><div class="av" style="width:24px;height:24px;font-size:9px;background:'+c.bg+';color:'+c.text+';flex-shrink:0">'+ini(x.en)+'</div><span style="font-weight:600;font-size:13px;white-space:nowrap">'+x.en+'</span><span style="font-size:10px;padding:1px 6px;border-radius:20px;background:'+(df<=1?'var(--amber-bg)':'var(--bg2)')+';color:'+(df<=1?'var(--amber-dark)':'var(--text2)')+'">'+tdiff(x.d)+'</span></div><div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(x.t||'Coaching')+(x.f?' · '+x.f:'')+'</div></div>';
+      h+='<button class="btn btn-sm" data-id="'+x.eid+'" data-d="'+x.d+'" data-f="'+x.f.replace(/[<>"]/g,'')+'" onclick="emailSession(parseInt(this.dataset.id),this.dataset.d,this.dataset.f)" title="Termin-E-Mail" style="padding:6px 9px;flex-shrink:0"><i class="ti ti-mail"></i></button>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Letzte Sessions
+  var let7=abg.slice(0,7);
+  h+='<div style="display:flex;flex-direction:column"><div class="sec-title" style="margin-bottom:10px">Letzte Sessions</div>';
+  if(!let7.length){
+    h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;text-align:center;color:var(--text3);flex:1"><i class="ti ti-history" style="font-size:28px;display:block;margin-bottom:8px"></i>Noch keine Sessions</div>';
+  } else {
+    h+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;flex:1">';
+    let7.forEach(function(x,i){
+      var c=ec(x.eid),r2=x.r?RS[x.r]:null;
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'+(i?'border-top:1px solid var(--border)':'')+';cursor:pointer" onclick="selectEmp('+x.eid+')">';
+      h+='<div class="av" style="width:32px;height:32px;font-size:11px;background:'+c.bg+';color:'+c.text+';flex-shrink:0">'+ini(x.en)+'</div>';
+      h+='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">'+x.en+'</div><div style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(x.f||x.t||'Session')+'</div></div>';
+      h+='<div style="text-align:right;flex-shrink:0">'+(r2?'<span class="badge" style="background:'+r2.bg+';color:'+r2.color+'">'+x.r+'</span>':'<span style="color:var(--text3)">—</span>')+'<div style="font-size:10px;color:var(--text3);margin-top:2px">'+mday(x.d)+'</div></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  h+='</div>';
+
+  // ══ ZEILE 4: Team-Status als Tabelle ══
+  h+='<div><div class="sec-title" style="margin-bottom:10px">Team-Status</div>'+
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">'+
+    '<table><thead><tr>'+
+    '<th style="min-width:180px">Mitarbeiter</th>'+
+    '<th style="text-align:center">Sessions</th>'+
+    '<th>Letzte Session</th>'+
+    '<th>Nächste Session</th>'+
+    '<th>Letzte Bew.</th>'+
+    '<th>Ø Skill</th>'+
+    '<th>KPI-Alerts</th>'+
+    '<th>Aktion</th>'+
+    '</tr></thead><tbody>';
+  liste.forEach(function(emp){
+    var c=ec(emp.id),tage=tageSeitLetzterSession(emp.id),na=naechsteGeplanteSession(emp.id);
+    var al=checkAlerts(emp.id),lb=lastRating(emp.id),lr=lb?RS[lb]:null,af=aufmerksamkeitFarbe(tage);
+    var empSess=abg.filter(function(x){return x.eid===emp.id;}).length;
+    var skill=avgSkill(emp.id);
+    var skillCol=skill!==null?(skill>=80?'var(--teal)':skill>=60?'var(--purple)':'var(--amber)'):'var(--text3)';
+    h+='<tr style="cursor:pointer" onclick="selectEmp('+emp.id+')">';
+    // Mitarbeiter
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+
+      '<div style="display:flex;align-items:center;gap:9px">'+
+      '<div class="av" style="width:30px;height:30px;font-size:11px;background:'+c.bg+';color:'+c.text+'">'+ini(emp.name)+'</div>'+
+      '<div><div style="font-weight:500">'+emp.name+(al.length?'<i class="ti ti-alert-triangle" style="font-size:11px;color:var(--amber);margin-left:4px"></i>':'')+'</div>'+
+      '<div style="font-size:11px;color:var(--text2)">'+emp.phase+'</div></div></div></td>';
+    // Sessions
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border);text-align:center;font-size:16px;font-weight:700;color:var(--purple)">'+empSess+'</td>';
+    // Letzte Session
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:600;color:'+af+'">'+(tage===null?'Noch keine':tage===0?'Heute':tage+'d')+'</td>';
+    // Nächste Session
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+
+      (na?'<span style="font-size:12px;font-weight:600;color:var(--purple)"><i class="ti ti-calendar-event" style="margin-right:3px;font-size:11px"></i>'+fd(na)+'</span>':
+          '<button class="btn btn-sm" onclick="event.stopPropagation();kalKlick(heute)" style="font-size:11px;padding:3px 8px"><i class="ti ti-calendar-plus"></i> Planen</button>')+
+      '</td>';
+    // Letzte Bewertung
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(lr?'<span class="badge" style="background:'+lr.bg+';color:'+lr.color+'">'+lb+'</span>':'<span style="color:var(--text3)">—</span>')+'</td>';
+    // Ø Skill
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+
+      (skill!==null?
+        '<div style="display:flex;align-items:center;gap:6px">'+
+        '<div style="width:48px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+skill+'%;background:'+skillCol+'"></div></div>'+
+        '<span style="font-size:12px;font-weight:600;color:'+skillCol+'">'+skill+'%</span></div>':
+        '<span style="color:var(--text3)">—</span>')+
+      '</td>';
+    // Alerts
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+(al.length?'<span style="color:var(--red);font-weight:600;font-size:12px">⚠ '+al.length+'</span>':'<span style="color:var(--teal)">✓</span>')+'</td>';
+    // Aktion
+    h+='<td style="padding:10px 14px;border-bottom:1px solid var(--border)">'+
+      '<button class="btn btn-sm btn-primary" data-id="'+emp.id+'" onclick="event.stopPropagation();openSessionModal(parseInt(this.dataset.id))"><i class="ti ti-calendar-plus"></i> Planen</button>'+
+      '</td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table></div></div></div>';
+  ma.innerHTML=h;
+}
+
+function kalKlick(d){
+  openSessionModal(0);
+  setTimeout(function(){var el=document.getElementById('sessionDatum');if(el)el.value=d;},50);
+}
+
+function emailSession(eid,datum,fokus){
+  var emp=employees.find(function(e){return e.id===eid;});if(!emp)return;
+  var dt=new Date(datum+'T00:00:00');
+  var wt=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  var mt=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  var datTxt=wt[dt.getDay()]+', den '+dt.getDate()+'. '+mt[dt.getMonth()];
+  var nl='%0A';
+  var sub=encodeURIComponent('Coaching-Session: '+datTxt);
+  var bod='Hallo '+encodeURIComponent(emp.name.split(' ')[0])+','+nl+nl+'Datum: '+encodeURIComponent(datTxt)+nl+(fokus?'Thema: '+encodeURIComponent(fokus)+nl:'')+nl+'Bitte bestätige den Termin.'+nl+nl+'Viele Grüße';
+  window.location.href='mailto:?subject='+sub+'&body='+bod;
+}
+
+
 // ── C
 // ── CONSTANTS ──
 var COLORS=[{bg:'#EEEDFE',text:'#3C3489'},{bg:'#E1F5EE',text:'#085041'},{bg:'#FAECE7',text:'#712B13'},{bg:'#FBEAF0',text:'#72243E'},{bg:'#E6F1FB',text:'#0C447C'},{bg:'#EAF3DE',text:'#27500A'}];
@@ -461,6 +718,7 @@ function renderSidebar(){
   el.innerHTML='';
   document.querySelectorAll('.sb-item').forEach(function(x){x.classList.remove('active');});
   if(view==='team')document.getElementById('nav-team').classList.add('active');
+  var nc=document.getElementById('nav-coaching');if(nc)nc.classList.toggle('active',view==='coaching');
   if(view==='settings')document.getElementById('nav-settings').classList.add('active');
   employees.forEach(function(e){
     var c=COLORS[e.color%COLORS.length];
@@ -481,7 +739,7 @@ function renderSidebar(){
 
 function setTeamRange(d){teamRange=d;renderTeam();}
 function showView(v){view=v;renderSidebar();renderMain();}
-function renderMain(){if(view==='team')renderTeam();else if(view==='settings')renderEinstellungen();else renderEmpDetail();}
+function renderMain(){if(view==='team')renderTeam();else if(view==='coaching')renderCoachingAnsicht();else if(view==='settings')renderEinstellungen();else renderEmpDetail();}
 
 // ── TEAM VIEW ──
 
@@ -1424,62 +1682,129 @@ function renderTab(){
 
 // ── SETTINGS ──
 function renderEinstellungen(){
-  var ma=document.getElementById('mainArea');
-  if(!ma)return;
-  function zielRow(key,label,einheit,step){
+  var ma=document.getElementById('mainArea');if(!ma)return;
+  function zRow(key,label,einheit,step){
     var t=KPI_TARGETS[key];
-    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">'
-      +'<div style="width:130px;font-size:13px;font-weight:500">'+label+'</div>'
-      +'<div style="display:flex;align-items:center;gap:6px">'
-      +'<select id="dir-'+key+'" style="width:60px;font-size:13px;padding:6px 8px">'
+    return '<div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">'
+      +'<div style="width:170px;font-size:13px;font-weight:500">'+label+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<select id="dir-'+key+'" style="width:64px;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">'
       +'<option value="gte"'+(t.dir==='gte'?' selected':'')+'>≥</option>'
       +'<option value="lte"'+(t.dir==='lte'?' selected':'')+'>≤</option>'
       +'</select>'
-      +'<input type="number" id="val-'+key+'" value="'+t.val+'" step="'+(step||1)+'" min="0" max="100" style="width:80px">'
-      +'<span style="font-size:12px;color:var(--text2)">'+einheit+'</span>'
+      +'<input type="number" id="val-'+key+'" value="'+t.val+'" step="'+(step||1)+'" min="0" max="100" style="width:80px;font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">'
+      +(einheit?'<span style="font-size:12px;color:var(--text2)">'+einheit+'</span>':'')
       +'</div>'
-      +'<div style="font-size:11px;color:var(--text3);margin-left:auto">Aktuell: '+t.dir+' '+t.val+(einheit||'')+'</div>'
+      +'<div style="margin-left:auto;font-size:11px;color:var(--text3)">Aktuell: '+t.dir+' '+t.val+(einheit||'')+'</div>'
       +'</div>';
   }
+
   ma.innerHTML='<div class="topbar"><div class="tb-left">'
     +'<div style="width:40px;height:40px;border-radius:50%;background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;font-size:17px"><i class="ti ti-settings"></i></div>'
-    +'<div><div class="tb-name">Einstellungen</div><div class="tb-meta">Globale Konfiguration & Integrationen</div></div>'
+    +'<div><div class="tb-name">Einstellungen</div><div class="tb-meta">Integrationen · Daten · KPI-Konfiguration</div></div>'
     +'</div></div>'
-    +'<div class="content" style="max-width:680px">'
+    +'<div class="content" style="max-width:100%">'
 
-    // KPI Zielwerte
+    // ══ ZEILE 1: Integrationen (volle Breite, 2 Kacheln nebeneinander) ══
+    +'<div class="sec-title" style="margin-bottom:12px">Integrationen</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'
+
+    // SolidRoad
+    +'<div class="card" style="cursor:pointer" onclick="openModal(\'srModal\')">'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+    +'<div class="set-icon" style="background:var(--purple-bg);color:var(--purple);width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i class="ti ti-robot"></i></div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:600">SolidRoad</div><div style="font-size:12px;color:var(--text2);margin-top:2px">KI-gestützte Vertriebssimulationen für dein Team</div></div>'
+    +(settings.srApiKey
+      ?'<span style="background:var(--teal-bg);color:var(--teal);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">Verbunden</span>'
+      :'<span style="background:var(--bg2);color:var(--text3);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">Nicht verbunden</span>')
+    +'</div></div>'
+
+    // FTP Sync
+    +'<div class="card">'
+    +'<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'
+    +'<div class="set-icon" style="background:var(--teal-bg);color:var(--teal);width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i class="ti ti-refresh"></i></div>'
+    +'<div style="flex:1"><div style="font-size:14px;font-weight:600">FTP Datensync</div><div style="font-size:12px;color:var(--text2);margin-top:2px">Performance-Daten automatisch per CSV importieren</div></div>'
+    +'<span style="background:var(--teal-bg);color:var(--teal);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">Aktiv</span>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<input type="url" id="ftpInput" placeholder="ftp://server.com/performance/" value="'+settings.ftpUrl+'" style="flex:1;font-size:12px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">'
+    +'<button class="btn btn-sm btn-primary" onclick="saveFTP()" style="flex-shrink:0">Speichern</button>'
+    +'</div></div>'
+    +'</div>'
+
+    // ══ ZEILE 2: CSV Import + Backup (volle Breite, 2 Kacheln) ══
+    +'<div class="sec-title" style="margin-bottom:12px">Daten & Backup</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">'
+
+    // CSV Import
+    +'<div class="card">'
+    +'<div class="card-title"><i class="ti ti-file-upload"></i> Performance-Daten importieren</div>'
+    +'<p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Lade eine CSV-Datei hoch um Leistungsdaten zu aktualisieren. Bestehende Einträge für das gleiche Datum werden überschrieben. Coaching-Daten bleiben unberührt.</p>'
+    +'<div style="background:var(--bg2);border-radius:var(--r-md);padding:10px 12px;margin-bottom:14px">'
+    +'<div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:6px">CSV-Spalten (in dieser Reihenfolge):</div>'
+    +'<div style="font-family:monospace;font-size:11px;color:var(--text2);line-height:1.8">'
+    +'datum · mitarbeiter_id · gespraeche<br>'
+    +'cr_oem · cr_tw · cr_yes · cr_sy · cr_my<br>'
+    +'opt_pro_stunde · marge'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--text3);margin-top:4px">Beispiel: 2026-06-23, 1, 24, 62, 18, 21, 14, 9, 2.1, 950</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +'<label class="btn btn-primary btn-sm" style="cursor:pointer"><i class="ti ti-upload"></i> CSV hochladen<input type="file" accept=".csv" style="display:none" onchange="importCSV(this.files[0])"></label>'
+    +'<button class="btn btn-sm" onclick="downloadCSVVorlage()"><i class="ti ti-download"></i> Vorlage laden</button>'
+    +'</div>'
+    +'<div id="csv-status" style="margin-top:10px;font-size:12px;min-height:18px"></div>'
+    +'</div>'
+
+    // Backup
+    +'<div class="card">'
+    +'<div class="card-title"><i class="ti ti-database"></i> Backup & Wiederherstellung</div>'
+    +'<p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Alle Coaching-Daten werden automatisch im Browser gespeichert. Erstelle Backups vor Dashboard-Updates.</p>'
+    +'<div style="display:flex;flex-direction:column;gap:8px">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'
+    +'<div><div style="font-size:13px;font-weight:500">Backup exportieren</div><div style="font-size:11px;color:var(--text2)">JSON-Download aller Coaching-Daten</div></div>'
+    +'<button class="btn btn-sm btn-primary" onclick="exportDaten()"><i class="ti ti-download"></i> Download</button>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'
+    +'<div><div style="font-size:13px;font-weight:500">Backup wiederherstellen</div><div style="font-size:11px;color:var(--text2)">JSON-Datei vom vorherigen Export</div></div>'
+    +'<label class="btn btn-sm" style="cursor:pointer"><i class="ti ti-file-import"></i> JSON laden<input type="file" accept=".json" style="display:none" onchange="importDaten(this.files[0])"></label>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--amber-bg);border-radius:var(--r-md)">'
+    +'<div><div style="font-size:13px;font-weight:500;color:var(--amber-dark)">Alle Daten zurücksetzen</div><div style="font-size:11px;color:var(--amber-dark)">Löscht gespeicherte Daten, lädt Demodaten</div></div>'
+    +'<button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber-dark);border-color:var(--amber)" onclick="lsClear()"><i class="ti ti-trash"></i> Reset</button>'
+    +'</div>'
+    +'</div></div>'
+    +'</div>'
+
+    // ══ ZEILE 3: KPI Zielwerte (volle Breite) ══
     +'<div class="sec-title" style="margin-bottom:12px">KPI-Zielwerte</div>'
     +'<div class="card">'
     +'<div class="card-title"><i class="ti ti-target"></i> Zielwerte & Richtung</div>'
-    +'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Lege für jede Kennzahl fest ob ein Wert größer (≥) oder kleiner (≤) als der Zielwert sein soll. Diese Werte gelten als globale Standards – können pro Mitarbeiter überschrieben werden.</p>'
-    +zielRow('crOEM','CR OEM','%',1)
-    +zielRow('crTeilweise','CR TW (Teilweise)','%',1)
-    +zielRow('crSuperYes','CR SY (Super Yes)','%',1)
-    +zielRow('crMegaYes','CR MY (Mega Yes)','%',1)
-    +zielRow('optPerH','Opt./Stunde','',0.1)
-    +'<div style="margin-top:16px">'
-    +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="zieleSpeichern()"><i class="ti ti-check"></i> Zielwerte speichern</button>'
-    +'</div></div>'
-
-    // Integrationen
-    +'<div class="sec-title" style="margin-top:8px;margin-bottom:12px">Integrationen</div>'
-    +'<div class="set-row" style="cursor:pointer" onclick="openModal(\'srModal\')">'
-    +'<div class="set-icon" style="background:var(--purple-bg);color:var(--purple)"><i class="ti ti-robot"></i></div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">SolidRoad</div><div style="font-size:12px;color:var(--text2)">KI-gestützte Vertriebssimulationen</div></div>'
-    +(settings.srApiKey?'<span class="connected">Verbunden</span>':'<span class="disconnected">Nicht verbunden</span>')
+    +'<p style="font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.6">Lege fest ob ein Wert <strong>größer (≥)</strong> oder <strong>kleiner (≤)</strong> als der Zielwert sein soll. Gilt als globaler Standard für alle Mitarbeiter.</p>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 40px">'
+    +zRow('crOEM','CR OEM','%',1)
+    +zRow('crSuperYes','CR SY (Super Yes)','%',1)
+    +zRow('crTeilweise','CR TW (Teilweise)','%',1)
+    +zRow('crMegaYes','CR MY (Mega Yes)','%',1)
+    +zRow('optPerH','Opt./Stunde','',0.1)
     +'</div>'
-    +'<div class="set-row">'
-    +'<div class="set-icon" style="background:var(--teal-bg);color:var(--teal)"><i class="ti ti-refresh"></i></div>'
-    +'<div style="flex:1"><div style="font-size:13px;font-weight:500">FTP Datensync</div>'
-    +'<div style="font-size:12px;color:var(--text2)">Performance CSV Auto-Import</div>'
-    +'<div style="margin-top:8px"><input type="url" id="ftpInput" placeholder="ftp://server.com/performance/" value="'+settings.ftpUrl+'" style="font-size:12px"></div>'
-    +'</div><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
-    +'<span class="connected">Aktiv</span>'
-    +'<button class="btn btn-sm btn-primary" onclick="saveFTP()">Speichern</button>'
+    +'<div style="margin-top:16px;display:flex;align-items:center;gap:12px">'
+    +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="zieleSpeichern()"><i class="ti ti-check"></i> Zielwerte speichern</button>'
+    +'<span id="ziele-status" style="font-size:12px;color:var(--teal)"></span>'
     +'</div></div>'
 
-    // Über
-    +'<div class="sec-title" style="margin-top:8px;margin-bottom:12px">Daten &amp; Backup</div>'    +'<div class="card">'    +'<div class="card-title"><i class="ti ti-database"></i> Datenverwaltung</div>'    +'<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">Coaching-Daten werden automatisch im Browser gespeichert. Performance-Daten per CSV importieren.</p>'    +'<div style="display:flex;flex-direction:column;gap:10px">'    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'    +'<div><div style="font-size:13px;font-weight:500">Backup exportieren</div><div style="font-size:11px;color:var(--text2)">JSON-Download aller Coaching-Daten</div></div>'    +'<button class="btn btn-sm btn-primary" onclick="exportDaten()"><i class="ti ti-download"></i> Download</button>'    +'</div>'    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'    +'<div><div style="font-size:13px;font-weight:500">Performance CSV importieren</div><div style="font-size:11px;color:var(--text2)">Spalten: date, mitarbeiterId, calls, crOEM, crTeilweise, crYes, crSuperYes, crMegaYes, optPerH, margin</div></div>'    +'<label class="btn btn-sm btn-primary" style="cursor:pointer"><i class="ti ti-upload"></i> CSV laden<input type="file" accept=".csv" style="display:none" onchange="importCSV(this.files[0])"></label>'    +'</div>'    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'    +'<div><div style="font-size:13px;font-weight:500">Backup wiederherstellen</div><div style="font-size:11px;color:var(--text2)">JSON-Datei vom vorherigen Export laden</div></div>'    +'<label class="btn btn-sm" style="cursor:pointer"><i class="ti ti-file-import"></i> JSON laden<input type="file" accept=".json" style="display:none" onchange="importDaten(this.files[0])"></label>'    +'</div>'    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--amber-bg);border-radius:var(--r-md)">'    +'<div><div style="font-size:13px;font-weight:500;color:var(--amber-dark)">Alle Daten zurücksetzen</div><div style="font-size:11px;color:var(--amber-dark)">Löscht gespeicherte Daten, lädt Demodaten</div></div>'    +'<button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber-dark);border-color:var(--amber)" onclick="lsClear()"><i class="ti ti-trash"></i> Zurücksetzen</button>'    +'</div>'    +'</div></div>'    +'<div class="sec-title" style="margin-top:8px;margin-bottom:12px">Über</div>'    +'<div class="set-row">'    +'<div class="set-icon" style="background:var(--bg2);color:var(--text2)"><i class="ti ti-info-circle"></i></div>'    +'<div><div style="font-size:13px;font-weight:500">SFP Coaching Dashboard</div>'    +'<div style="font-size:12px;color:var(--text2)">Wiegand &amp; Partner · v4.1 · Built for Peter Rode</div></div>'    +'</div>'    +'</div>';
+    // ══ ÜBER ══
+    +'<div style="margin-top:24px;padding:16px 20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);display:flex;align-items:center;gap:16px">'
+    +'<div style="width:44px;height:44px;border-radius:50%;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--purple);flex-shrink:0"><i class="ti ti-chart-dots"></i></div>'
+    +'<div><div style="font-size:14px;font-weight:600">SFP Coaching Dashboard</div>'
+    +'<div style="font-size:12px;color:var(--text2);margin-top:2px">Wiegand &amp; Partner · v4.1 · Entwickelt für Peter Rode</div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:3px">localStorage aktiv · GitHub Pages · Single-File HTML</div>'
+    +'</div>'
+    +'<div style="margin-left:auto;text-align:right">'
+    +'<div style="font-size:11px;color:var(--text3)">Staging: wiegand-sales-dev</div>'
+    +'<div style="font-size:11px;color:var(--text3)">Live: wiegand-sales</div>'
+    +'</div></div>'
+    +'</div>';
 }
 
 // ── ACTIONS ──
@@ -1831,6 +2156,7 @@ function zieleSpeichern(){
   });
   CR_GOOD=KPI_TARGETS.crOEM.val;
   renderEinstellungen();
+  var zs=document.getElementById('ziele-status');if(zs){zs.textContent='✓ Gespeichert';setTimeout(function(){zs.textContent='';},3000);}
   var btn=document.querySelector('[onclick="zieleSpeichern()"]');
   if(btn){
     btn.innerHTML='<i class="ti ti-check"></i> Gespeichert!';
