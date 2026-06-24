@@ -312,6 +312,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1382,7 +1383,6 @@ function renderTab(){
     // Chart
     var mMap={
       calls:{f:'aktivitaeten',l:'Aktivitäten',c:'#534AB7'},
-      optPerH:{f:'optPerH',l:'Opt./Std.',c:'#378ADD'},
       crTeilweise:{f:'crTeilweise',l:'CR TW %',c:'#888780'},
       crYes:{f:'crYes',l:'CR Yes %',c:'#639922'},
       crSuperYes:{f:'crSuperYes',l:'CR SY %',c:'#534AB7'},
@@ -1411,7 +1411,7 @@ function renderTab(){
         +'<th>Datum</th><th>Aktivitäten</th><th>NE</th><th>NM</th><th>NErr</th>'
         +'<th>Conv. OEM</th><th>TW</th><th>Yes</th><th>SY</th><th>MY</th>'
         +'<th>CR OEM%</th><th>CR TW%</th><th>CR SY%</th><th>CR MY%</th>'
-        +'<th>Upsells</th><th>WKA</th><th>Opt. Ges.</th><th>Opt./Std.</th><th>Marge Ges.</th>'
+        +'<th>Upsells</th><th>WKA</th><th>Opt. Ges.</th><th>Marge Ges.</th>'
         +'</tr></thead><tbody>';
       perfAll.forEach(function(row){
         var akt=row.aktivitaeten||row.calls||0;
