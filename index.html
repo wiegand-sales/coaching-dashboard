@@ -315,6 +315,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1311,6 +1312,7 @@ function renderEmpDetail(){
     +'</div><div style="display:flex;gap:8px"><button class="btn" onclick="window.print()"><i class="ti ti-printer"></i> Print</button></div></div>'
     +'<div class="tab-bar" id="empTabBar">'
     +'<div class="tab" data-tab="performance" onclick="switchTab(\'performance\')">Performance</div>'
+    +'<div class="tab" data-tab="coaching-eval" onclick="switchTab(\'coaching-eval\')">Coaching</div>'
     +'<div class="tab" data-tab="protocols" onclick="switchTab(\'protocols\')">Protokolle</div>'
     +'<div class="tab" data-tab="progress" onclick="switchTab(\'progress\')">Fortschritt</div>'
     +'<div class="tab" data-tab="solidroad" onclick="switchTab(\'solidroad\')">SolidRoad</div>'
