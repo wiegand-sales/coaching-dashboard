@@ -307,6 +307,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -770,7 +771,7 @@ function renderSidebar(){
   var groups=[
     {key:'SE',label:'SE',members:visible.filter(function(e){return e.team==='SE';})},
     {key:'SR',label:'SR',members:visible.filter(function(e){return e.team==='SR';})},
-    {key:'VLC',label:'Valencia',members:visible.filter(function(e){return e.team==='VLC';})},
+    {key:'VLC',label:'VLC',members:visible.filter(function(e){return e.team==='VLC';})},
   ];
   var onboardingM=visible.filter(function(e){return e.phase==='Onboarding';});
   if(onboardingM.length)groups.push({key:'OB',label:'Onboarding',members:onboardingM});
@@ -888,7 +889,7 @@ function buildGroupedCards(list,days){
   var TGROUPS=[
     {key:'SE',label:'SE',filter:function(e){return e.team==='SE';}},
     {key:'SR',label:'SR',filter:function(e){return e.team==='SR';}},
-    {key:'VLC',label:'Valencia',filter:function(e){return e.team==='VLC';}},
+    {key:'VLC',label:'VLC',filter:function(e){return e.team==='VLC';}},
   ];
   var CK='sfp_team_col';
   var col={};try{col=JSON.parse(localStorage.getItem(CK)||'{}');}catch(ex){}
@@ -1233,7 +1234,7 @@ function renderTeam(){
         {key:'ALL',label:'Alle',n:allVisible.length},
         {key:'SE',label:'SE',n:allVisible.filter(function(e){return e.team==='SE';}).length},
         {key:'SR',label:'SR',n:allVisible.filter(function(e){return e.team==='SR';}).length},
-        {key:'VLC',label:'Valencia',n:allVisible.filter(function(e){return e.team==='VLC';}).length},
+        {key:'VLC',label:'VLC',n:allVisible.filter(function(e){return e.team==='VLC';}).length},
         {key:'INAKTIV',label:'Inaktiv',n:inactiveAll.length},
       ];
       var fbar='<div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">';
