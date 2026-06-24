@@ -323,6 +323,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1537,111 +1538,39 @@ function renderTab(){
   if(activeTab==='coaching-eval'){
     var DIMS=[
       {key:'einwand',   label:'Einwandsbehandlung', short:'Einwandsb.', cat:'skill'},
-      {key:'bedarf',    label:'Bedarfsanalyse',      short:'Bedarfsana.', cat:'skill'},
-      {key:'produkt',   label:'Produktwissen',       short:'Produktw.',   cat:'skill'},
-      {key:'gespraech', label:'Gesprächsführung',    short:'Gesprächsf.', cat:'skill'},
-      {key:'motivation',label:'Motivation',          short:'Motivation',  cat:'will'},
-      {key:'coach',     label:'Coachability',        short:'Coachab.',    cat:'will'},
-      {key:'team',      label:'Teamfähigkeit',       short:'Teamf.',      cat:'will'},
-      {key:'crOEM',     label:'CR OEM',              short:'CR OEM',      cat:'result'},
-      {key:'crTW',      label:'TW',                  short:'TW',          cat:'result'},
-      {key:'crSY',      label:'SY',                  short:'SY',          cat:'result'},
-      {key:'crMY',      label:'MY',                  short:'MY',          cat:'result'},
+      {key:'bedarf',    label:'Bedarfsanalyse',      short:'Bedarfsana.',cat:'skill'},
+      {key:'produkt',   label:'Produktwissen',       short:'Produktw.',  cat:'skill'},
+      {key:'gespraech', label:'Gesprächsführung',    short:'Gesprächsf.',cat:'skill'},
+      {key:'motivation',label:'Motivation',          short:'Motivation', cat:'will'},
+      {key:'coach',     label:'Coachability',        short:'Coachab.',   cat:'will'},
+      {key:'team',      label:'Teamfähigkeit',       short:'Teamf.',     cat:'will'},
+      {key:'crOEM',     label:'CR OEM',              short:'CR OEM',     cat:'result'},
+      {key:'crTW',      label:'TW',                  short:'TW',         cat:'result'},
+      {key:'crSY',      label:'SY',                  short:'SY',         cat:'result'},
+      {key:'crMY',      label:'MY',                  short:'MY',         cat:'result'},
     ];
     var CCAT={
-      skill: {col:'#534AB7', fill:'rgba(83,74,183,0.18)',  stroke:'rgba(83,74,183,0.5)',  l:'Skill'},
-      will:  {col:'#C47A1E', fill:'rgba(196,122,30,0.18)', stroke:'rgba(196,122,30,0.5)', l:'Will'},
-      result:{col:'#0A6B55', fill:'rgba(10,107,85,0.18)',  stroke:'rgba(10,107,85,0.5)',  l:'Result'}
+      skill: {col:'#534AB7', fill:'rgba(83,74,183,0.12)',  l:'Skill'},
+      will:  {col:'#C47A1E', fill:'rgba(196,122,30,0.12)', l:'Will'},
+      result:{col:'#0A6B55', fill:'rgba(10,107,85,0.12)',  l:'Result'}
     };
     var evals=(reviews[emp.id]||[]).filter(function(r){return r.einwand!==undefined;})
                 .slice().sort(function(a,b){return b.date.localeCompare(a.date);});
     var showEval=evals[0]||null;
 
-    // ── SVG Radar ──
-    function buildSVGRadar(ev){
-      var W=340,H=340,CX=170,CY=170,R=120,n=DIMS.length;
-      var rings=[2,4,6,8,10];
-      function pt(i,val){
-        var a=(i/n)*2*Math.PI - Math.PI/2;
-        return {x:CX+R*val/10*Math.cos(a), y:CY+R*val/10*Math.sin(a)};
-      }
-      function ringPts(val){
-        return DIMS.map(function(_,i){var p=pt(i,val);return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-      }
-
-      var svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block">';
-
-      // Hintergrund-Ringe
-      rings.forEach(function(v){
-        svg+='<polygon points="'+ringPts(v)+'" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="'+(v===10?1.5:0.8)+'"/>';
-      });
-      // Achslinien
-      DIMS.forEach(function(_,i){
-        var p=pt(i,10);
-        svg+='<line x1="'+CX+'" y1="'+CY+'" x2="'+p.x.toFixed(1)+'" y2="'+p.y.toFixed(1)+'" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>';
-      });
-
-      // Kategorie-Segmente: Füllung zwischen Achsen der gleichen Kategorie
-      ['skill','will','result'].forEach(function(cat){
-        var idxs=[];
-        DIMS.forEach(function(d,i){if(d.cat===cat)idxs.push(i);});
-        // Segment-Polygon: Mitte + alle äußeren Punkte der Kategorie
-        var pts=CX+','+CY;
-        idxs.forEach(function(i){var p=pt(i,10);pts+=' '+p.x.toFixed(1)+','+p.y.toFixed(1);});
-        svg+='<polygon points="'+pts+'" fill="'+CCAT[cat].fill+'" stroke="'+CCAT[cat].stroke+'" stroke-width="1.5" stroke-linejoin="round"/>';
-      });
-
-      if(ev){
-        // Datenwerte Fläche
-        var dataPts=DIMS.map(function(d,i){var p=pt(i,ev[d.key]||0);return p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ');
-        svg+='<polygon points="'+dataPts+'" fill="rgba(30,30,60,0.08)" stroke="rgba(30,30,60,0.75)" stroke-width="2.5" stroke-linejoin="round"/>';
-
-        // Punkte
-        DIMS.forEach(function(d,i){
-          var p=pt(i,ev[d.key]||0);
-          svg+='<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="'+CCAT[d.cat].col+'" stroke="white" stroke-width="2"/>';
-        });
-      }
-
-      // Labels außen
-      DIMS.forEach(function(d,i){
-        var p=pt(i,10);
-        var lx=CX+(R+26)*Math.cos((i/n)*2*Math.PI-Math.PI/2);
-        var ly=CY+(R+26)*Math.sin((i/n)*2*Math.PI-Math.PI/2);
-        var anchor=lx<CX-5?'end':lx>CX+5?'start':'middle';
-        svg+='<text x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" text-anchor="'+anchor+'" font-size="10" font-weight="600" fill="'+CCAT[d.cat].col+'">'+d.short+'</text>';
-      });
-
-      // Ring-Beschriftung
-      rings.forEach(function(v){
-        svg+='<text x="'+(CX+3)+'" y="'+(CY-R*v/10+3)+'" font-size="8" fill="rgba(0,0,0,0.3)">'+v+'</text>';
-      });
-
-      svg+='</svg>';
-      return svg;
-    }
-
-    // ── Linke Spalte höhe = rechte Spalte höhe via align-items:stretch ──
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;align-items:start">';
 
-    // ── Links ──
+    // ── Links: Chart ──
     html+='<div style="display:flex;flex-direction:column;gap:12px">';
     html+='<div class="sec-title">Entwicklungsprofil</div>';
-    html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;flex:1">';
-    if(showEval){
-      html+=buildSVGRadar(showEval);
-    } else {
-      html+='<div style="text-align:center;padding:40px 0;color:var(--text3)"><i class="ti ti-chart-radar" style="font-size:32px;display:block;margin-bottom:8px"></i>Noch keine Bewertung</div>';
-    }
-    // Legende
-    html+='<div style="display:flex;gap:14px;justify-content:center;margin-top:10px;flex-wrap:wrap">';
+    html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px">';
+    html+='<div style="position:relative"><canvas id="radarChart" height="260"></canvas></div>';
+    html+='<div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">';
     ['skill','will','result'].forEach(function(cat){
       html+='<span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:'+CCAT[cat].col+'">';
-      html+='<span style="width:11px;height:11px;border-radius:2px;background:'+CCAT[cat].col+';opacity:0.8;display:inline-block"></span>'+CCAT[cat].l+'</span>';
+      html+='<span style="width:10px;height:10px;border-radius:50%;background:'+CCAT[cat].col+';display:inline-block"></span>'+CCAT[cat].l+'</span>';
     });
     html+='</div></div>';
-
-    // Ø Kacheln
     if(showEval){
       html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
       ['skill','will','result'].forEach(function(cat){
@@ -1656,11 +1585,11 @@ function renderTab(){
     }
     html+='</div>';
 
-    // ── Rechts ──
+    // ── Rechts: Balken ──
     html+='<div style="display:flex;flex-direction:column;gap:12px">';
     html+='<div class="sec-title">Aktuelle Bewertung</div>';
     if(showEval){
-      html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;flex:1">';
+      html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">';
       ['skill','will','result'].forEach(function(cat){
         var cdims=DIMS.filter(function(d){return d.cat===cat;});
         html+='<div style="padding:6px 14px;background:'+CCAT[cat].fill+';border-top:2px solid '+CCAT[cat].col+'">';
@@ -1683,38 +1612,84 @@ function renderTab(){
     } else {
       html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;text-align:center;color:var(--text3)"><i class="ti ti-chart-radar" style="font-size:28px;display:block;margin-bottom:8px"></i>Noch keine Bewertung</div>';
     }
-    html+='<button class="btn btn-primary" style="width:100%" data-eid="'+emp.id+'" onclick="openCoachingEval(parseInt(this.dataset.eid))"><i class="ti ti-clipboard-plus"></i> Mitarbeiterentwicklung bewerten</button>';
-    html+='</div>';
-    html+='</div>';
+    html+='<button class="btn btn-primary" style="width:100%;margin-top:auto" data-eid="'+emp.id+'" onclick="openCoachingEval(parseInt(this.dataset.eid))"><i class="ti ti-clipboard-plus"></i> Mitarbeiterentwicklung bewerten</button>';
+    html+='</div></div>';
 
     // ── Tabelle ──
     html+='<div class="sec-title" style="margin-bottom:10px">Bewertungs-Historie</div>';
     if(!evals.length){
       html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;text-align:center;color:var(--text3)">Noch keine Bewertungen</div>';
     } else {
-      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden"><colgroup>';
-      html+='<col style="width:130px">';
-      DIMS.forEach(function(){html+='<col style="width:55px">';});
-      html+='<col></colgroup><thead><tr style="background:var(--bg2)">';
-      html+='<th style="text-align:left;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border)">Datum</th>';
+      html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">';
+      html+='<colgroup><col style="width:130px">';
+      DIMS.forEach(function(){html+='<col style="width:52px">';});
+      html+='<col style="width:120px"></colgroup>';
+      html+='<thead><tr style="background:var(--bg2)">';
+      html+='<th style="text-align:left;padding:8px 10px;font-size:11px;border-bottom:1px solid var(--border)">Datum</th>';
       ['skill','will','result'].forEach(function(cat){
         DIMS.filter(function(d){return d.cat===cat;}).forEach(function(d){
-          html+='<th title="'+d.label+'" style="text-align:center;padding:6px 2px;font-size:10px;font-weight:700;color:'+CCAT[cat].col+';background:'+CCAT[cat].fill+';border-bottom:1px solid var(--border);border-left:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55px">'+d.short+'</th>';
+          html+='<th title="'+d.label+'" style="text-align:center;padding:5px 2px;font-size:9px;font-weight:700;color:'+CCAT[cat].col+';background:'+CCAT[cat].fill+';border-bottom:1px solid var(--border);border-left:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+d.short+'</th>';
         });
       });
-      html+='<th style="text-align:left;padding:8px 12px;font-size:12px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Notiz</th></tr></thead><tbody>';
+      html+='<th style="text-align:left;padding:8px 10px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Notiz</th></tr></thead><tbody>';
       evals.forEach(function(ev,i){
-        var bg=i===0?'background:var(--purple-bg)':'';
-        html+='<tr style="'+bg+'">';
-        html+='<td style="padding:8px 12px;font-size:12px;'+(i===0?'font-weight:700':'')+'white-space:nowrap;border-bottom:1px solid var(--border)">'+fd(ev.date)+(i===0?' ★':'')+'</td>';
+        html+='<tr style="'+(i===0?'background:var(--bg2);font-weight:600;':'')+'">';
+        html+='<td style="padding:7px 10px;font-size:11px;white-space:nowrap;border-bottom:1px solid var(--border)">'+fd(ev.date)+(i===0?' ★':'')+'</td>';
         DIMS.forEach(function(d){
           var v=ev[d.key]||0;
           var c=v>=7?'var(--teal)':v>=4?CCAT[d.cat].col:'var(--amber)';
-          html+='<td style="text-align:center;padding:8px 3px;font-weight:600;color:'+c+';border-bottom:1px solid var(--border);border-left:1px solid var(--border)">'+v+'</td>';
+          html+='<td style="text-align:center;padding:7px 2px;font-size:12px;font-weight:600;color:'+c+';border-bottom:1px solid var(--border);border-left:1px solid var(--border)">'+v+'</td>';
         });
-        html+='<td style="padding:8px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);border-left:1px solid var(--border);word-break:break-word">'+(ev.note||'—')+'</td></tr>';
+        html+='<td style="padding:7px 10px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);border-left:1px solid var(--border);word-break:break-word">'+(ev.note||'—')+'</td></tr>';
       });
       html+='</tbody></table></div>';
+    }
+
+    // ── Chart.js: NUR eine Linie, farbige Punkte ──
+    if(showEval){
+      (function(ev,dims,ccat){
+        setTimeout(function(){
+          var canvas=document.getElementById('radarChart');
+          if(!canvas)return;
+          if(canvas._ci){canvas._ci.destroy();}
+          canvas._ci=new Chart(canvas,{
+            type:'radar',
+            data:{
+              labels:dims.map(function(d){return d.short;}),
+              datasets:[{
+                data:dims.map(function(d){return ev[d.key]||0;}),
+                backgroundColor:'rgba(60,60,100,0.07)',
+                borderColor:'rgba(60,60,100,0.7)',
+                borderWidth:2,
+                pointBackgroundColor:dims.map(function(d){return ccat[d.cat].col;}),
+                pointBorderColor:'white',
+                pointBorderWidth:1.5,
+                pointRadius:5,
+                pointHoverRadius:7,
+                fill:true
+              }]
+            },
+            options:{
+              responsive:true,
+              maintainAspectRatio:false,
+              scales:{r:{
+                min:0,max:10,
+                ticks:{stepSize:2,font:{size:9},color:'rgba(0,0,0,0.3)',backdropColor:'transparent'},
+                grid:{color:'rgba(0,0,0,0.06)'},
+                angleLines:{color:'rgba(0,0,0,0.07)'},
+                pointLabels:{
+                  font:{size:10,weight:'600'},
+                  color:function(ctx){return ccat[dims[ctx.index].cat].col;}
+                }
+              }},
+              plugins:{
+                legend:{display:false},
+                tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+'/10';}}}
+              }
+            }
+          });
+        },120);
+      })(showEval,DIMS,CCAT);
     }
   }
 
