@@ -305,6 +305,7 @@ tr:hover td{background:var(--bg2);}
 </div></div>
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1242,7 +1243,7 @@ function renderTeam(){
     html+='<button class="team-filter-btn" data-k="'+fd.key+'" onclick="setTeamFilter(this.dataset.k)" style="font-size:12px;font-weight:'+(act?700:500)+';padding:4px 12px;border-radius:20px;border:1px solid '+(act?'var(--purple)':'var(--border)')+';background:'+(act?'var(--purple)':'var(--bg)')+';color:'+(act?'#fff':'var(--text2)')+';cursor:pointer;transition:all .15s">'+fd.label+' <span style="font-size:11px;opacity:0.75">'+fd.n+'</span></button>';
   });
   html+='</div>';
-  +'<div class="sec-title" style="margin-bottom:10px">Conversion Rates & Marge <span style="font-weight:400;color:var(--text3)">· CR als % aller Gespräche · Gut ≥ '+CR_GOOD+'%'+(days!==7?' · Pfeil = Trend vs. 7-Tage-Ø':'')+'</span></div>'
+  html+='<div class="sec-title" style="margin-bottom:10px">Conversion Rates & Marge <span style="font-weight:400;color:var(--text3)">· CR als % aller Gespräche · Gut ≥ '+CR_GOOD+'%'+(days!==7?' · Pfeil = Trend vs. 7-Tage-Ø':'')+'</span></div>'
     +'<div class="tbl" style="margin-bottom:24px"><table><thead><tr>'
     +'<th style="min-width:160px">Mitarbeiter</th>'
     +'<th style="width:105px;min-width:105px">CR OEM</th>'
