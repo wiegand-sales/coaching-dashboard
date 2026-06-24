@@ -329,6 +329,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1749,91 +1750,92 @@ function renderTab(){
     var SESSION_TOPICS=['Einwandsbehandlung','Bedarfsanalyse','Produktwissen','Gesprächsführung','Motivation','Coachability','Zuverlässigkeit','Teamfähigkeit','CR OEM','TW','SY','MY','Sonstiges'];
     var sessions=(protocols[emp.id]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
 
+    // Kacheln Häufigkeit
+    var tc={};SESSION_TOPICS.forEach(function(t){tc[t]=0;});
+    sessions.forEach(function(s){(s.topics||[]).forEach(function(t){if(tc[t]!==undefined)tc[t]++;});});
+    var usedT=SESSION_TOPICS.filter(function(t){return tc[t]>0;});
+    if(usedT.length){
+      html+='<div style="margin-bottom:18px"><div class="sec-title" style="margin-bottom:10px">Coaching-Inhalte Übersicht</div>';
+      html+='<div style="display:flex;flex-wrap:wrap;gap:8px">';
+      SESSION_TOPICS.forEach(function(t){
+        var n=tc[t];if(!n)return;
+        var col=n>=5?'var(--purple)':n>=3?'var(--blue)':'var(--text2)';
+        html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 14px;text-align:center;min-width:70px">';
+        html+='<div style="font-size:20px;font-weight:700;color:'+col+'">'+n+'</div>';
+        html+='<div style="font-size:10px;color:var(--text2);margin-top:2px">'+t+'</div></div>';
+      });
+      html+='</div></div>';
+    }
+
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">';
 
-    // ── Links: Neue Session ──
-    html+='<div>';
-    html+='<div class="sec-title" style="margin-bottom:14px">Neue Session erfassen</div>';
+    // Links: Formular
+    html+='<div><div class="sec-title" style="margin-bottom:14px">Neue Session erfassen</div>';
     html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:14px">';
-
-    // Datum + Typ
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
     html+='<div><label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Datum</label>';
     html+='<input type="date" id="sess-date" value="'+today()+'" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)"></div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
     html+='<div><label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Art des Coachings</label>';
     html+='<select id="sess-type" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">';
     SESSION_TYPES.forEach(function(t){html+='<option>'+t+'</option>';});
-    html+='</select></div></div>';
-
-    // Inhalt (Multi-Select Chips)
-    html+='<div><label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:7px">Inhalt des Coachings <span style="font-weight:400;opacity:0.7">(mehrere möglich)</span></label>';
-    html+='<div id="sess-topics" style="display:flex;flex-wrap:wrap;gap:6px">';
-    SESSION_TOPICS.forEach(function(t){
-      html+='<label style="display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;user-select:none;background:var(--bg2)">';
-      html+='<input type="checkbox" value="'+t+'" style="margin:0;accent-color:var(--purple)"> '+t+'</label>';
-    });
-    html+='</div></div>';
-
-    // Bewertung
-    html+='<div><label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Bewertung des Mitarbeiters</label>';
-    html+='<select id="sess-rating" style="width:100%;box-sizing:border-box;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">';
-    html+='<option value="">— Keine Bewertung —</option>';
-    ['Teilweise','Yes','Super Yes','Mega Yes'].forEach(function(r){html+='<option>'+r+'</option>';});
     html+='</select></div>';
-
-    // START / STOP / CONTINUE / Notiz
-    var fields=[
-      {id:'sess-start', label:'START', sub:'Was soll der Mitarbeiter neu beginnen?', col:'#2D7A4F', bg:'#E8F5EE'},
-      {id:'sess-stop',  label:'STOP',  sub:'Was soll der Mitarbeiter aufhören?',     col:'#C0392B', bg:'#FDECEA'},
-      {id:'sess-cont',  label:'CONTINUE', sub:'Was soll der Mitarbeiter beibehalten?', col:'#B8860B', bg:'#FEF9E7'},
-      {id:'sess-note',  label:'Notizen', sub:'Weitere Beobachtungen & Vereinbarungen', col:'var(--text2)', bg:'var(--bg2)'},
+    html+='<div><label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Inhalt <span style="font-weight:400;opacity:0.6">(Strg+Klick = mehrere)</span></label>';
+    html+='<select id="sess-topic-sel" multiple size="5" style="width:100%;box-sizing:border-box;padding:4px;font-size:12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">';
+    SESSION_TOPICS.forEach(function(t){html+='<option value="'+t+'">'+t+'</option>';});
+    html+='</select></div></div>';
+    var sfields=[
+      {id:'sess-start',label:'START',    sub:'Was soll neu begonnen werden?',    col:'#2D7A4F',bg:'#E8F5EE'},
+      {id:'sess-stop', label:'STOP',     sub:'Was soll aufgehört werden?',       col:'#C0392B',bg:'#FDECEA'},
+      {id:'sess-cont', label:'CONTINUE', sub:'Was soll beibehalten werden?',     col:'#B8860B',bg:'#FEF9E7'},
+      {id:'sess-note', label:'Notizen',  sub:'Beobachtungen & Vereinbarungen',   col:'var(--text2)',bg:'var(--bg2)'},
     ];
-    fields.forEach(function(f){
+    sfields.forEach(function(f){
       html+='<div style="border-radius:var(--r-md);overflow:hidden">';
       html+='<div style="background:'+f.bg+';padding:7px 12px;border-left:3px solid '+f.col+'">';
       html+='<span style="font-size:11px;font-weight:700;color:'+f.col+'">'+f.label+'</span>';
-      if(f.sub)html+=' <span style="font-size:11px;color:'+f.col+';opacity:0.75">– '+f.sub+'</span>';
-      html+='</div>';
-      html+='<textarea id="'+f.id+'" rows="2" style="width:100%;box-sizing:border-box;padding:8px 12px;font-size:12px;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);background:var(--bg);color:var(--text);resize:vertical" placeholder=""></textarea>';
+      html+=' <span style="font-size:11px;color:'+f.col+';opacity:0.7">– '+f.sub+'</span></div>';
+      html+='<textarea id="'+f.id+'" rows="2" style="width:100%;box-sizing:border-box;padding:8px 12px;font-size:12px;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);background:var(--bg);color:var(--text);resize:vertical"></textarea>';
       html+='</div>';
     });
-
     html+='<button class="btn btn-primary" style="width:100%" data-eid="'+emp.id+'" onclick="saveSession(parseInt(this.dataset.eid))"><i class="ti ti-device-floppy"></i> Session speichern</button>';
     html+='</div></div>';
 
-    // ── Rechts: Session-Historie ──
-    html+='<div>';
-    html+='<div class="sec-title" style="margin-bottom:14px">Session-Historie</div>';
+    // Rechts: Historie aufklappbar
+    html+='<div><div class="sec-title" style="margin-bottom:14px">Session-Historie <span style="font-size:12px;font-weight:400;color:var(--text3)">('+sessions.length+')</span></div>';
     if(!sessions.length){
       html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;text-align:center;color:var(--text3)"><i class="ti ti-calendar-off" style="font-size:28px;display:block;margin-bottom:8px"></i>Noch keine Sessions</div>';
     } else {
-      html+='<div style="display:flex;flex-direction:column;gap:10px">';
-      sessions.forEach(function(s){
+      html+='<div style="display:flex;flex-direction:column;gap:8px">';
+      sessions.forEach(function(s,idx){
+        var eid='se'+emp.id+'x'+idx;
         var RM={Teilweise:{c:'var(--amber)'},Yes:{c:'var(--teal)'},'Super Yes':{c:'var(--purple)'},'Mega Yes':{c:'var(--blue)'}};
         var rm=s.rating?RM[s.rating]:null;
         html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">';
-        // Header
-        html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border)">';
-        html+='<span style="font-size:12px;font-weight:700">'+fd(s.date)+'</span>';
-        html+='<span style="font-size:11px;color:var(--text2);background:var(--bg3);padding:2px 8px;border-radius:20px">'+(s.type||'Session')+'</span>';
-        if(rm)html+='<span style="font-size:11px;font-weight:700;color:'+rm.c+';margin-left:auto">'+s.rating+'</span>';
-        html+='</div>';
-        // Topics
+        // Klickbarer Header via data-eid
+        html+='<div class="sess-hdr" data-eid="'+eid+'" onclick="toggleSessCard(this.dataset.eid)" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none">';
+        html+='<span style="font-size:12px;font-weight:700;white-space:nowrap">'+fd(s.date)+'</span>';
+        html+='<span style="font-size:11px;color:var(--text2);background:var(--bg2);padding:2px 8px;border-radius:20px;flex-shrink:0">'+(s.type||'Session')+'</span>';
         if(s.topics&&s.topics.length){
-          html+='<div style="padding:8px 14px;display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--border)">';
-          s.topics.forEach(function(t){html+='<span style="font-size:10px;background:var(--purple-bg);color:var(--purple);padding:2px 8px;border-radius:20px">'+t+'</span>';});
-          html+='</div>';
-        }
-        // START/STOP/CONTINUE/Notiz
-        var sfields=[{key:'start',label:'START',col:'#2D7A4F',bg:'#E8F5EE'},{key:'stop',label:'STOP',col:'#C0392B',bg:'#FDECEA'},{key:'cont',label:'CONTINUE',col:'#B8860B',bg:'#FEF9E7'},{key:'notes',label:'Notizen',col:'var(--text2)',bg:''}];
-        sfields.forEach(function(f){
-          var val=s[f.key]||s[f.key==='notes'?'text':''];
-          if(!val||!val.trim())return;
+          html+='<span style="font-size:11px;color:var(--purple);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">'+s.topics.join(' · ')+'</span>';
+        } else { html+='<span style="flex:1"></span>'; }
+        if(rm)html+='<span style="font-size:11px;font-weight:700;color:'+rm.c+';flex-shrink:0">'+s.rating+'</span>';
+        html+='<span id="arr-'+eid+'" style="color:var(--text3);font-size:12px;flex-shrink:0;transition:transform .2s">▾</span>';
+        html+='</div>';
+        // Aufklappbarer Body
+        html+='<div id="body-'+eid+'" style="display:none;border-top:1px solid var(--border)">';
+        var dfields=[
+          {key:'start',  label:'START',   col:'#2D7A4F'},
+          {key:'stop',   label:'STOP',    col:'#C0392B'},
+          {key:'cont',   label:'CONTINUE',col:'#B8860B'},
+          {key:'notes',  label:'Notizen', col:'var(--text2)'},
+        ];
+        dfields.forEach(function(f){
+          var val=s[f.key]||'';if(!val.trim())return;
           html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);border-left:3px solid '+f.col+'">';
           html+='<div style="font-size:10px;font-weight:700;color:'+f.col+';margin-bottom:3px">'+f.label+'</div>';
-          html+='<div style="font-size:12px;color:var(--text)">'+val+'</div></div>';
+          html+='<div style="font-size:12px;color:var(--text);white-space:pre-wrap">'+val+'</div></div>';
         });
-        html+='</div>';
+        html+='</div></div>';
       });
       html+='</div>';
     }
@@ -2654,6 +2656,15 @@ function saveCoachEval(empId){
   renderTab();
 }
 
+function toggleSessCard(eid){
+  var body=document.getElementById('body-'+eid);
+  var arr=document.getElementById('arr-'+eid);
+  if(!body)return;
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  if(arr)arr.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+}
+
 function saveSession(empId){
   var date=document.getElementById('sess-date').value;
   var type=document.getElementById('sess-type').value;
@@ -2664,7 +2675,7 @@ function saveSession(empId){
   var notes=document.getElementById('sess-note').value.trim();
   if(!date){alert('Bitte Datum eingeben.');return;}
   var topics=[];
-  document.querySelectorAll('#sess-topics input:checked').forEach(function(cb){topics.push(cb.value);});
+  var sel=document.getElementById('sess-topic-sel');if(sel){Array.from(sel.selectedOptions).forEach(function(o){topics.push(o.value);});}
   var entry={
     id:Date.now(),date:date,type:type,rating:rating||null,
     topics:topics,start:start,stop:stop,cont:cont,notes:notes,
