@@ -308,6 +308,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1336,81 +1337,106 @@ function renderTab(){
 
   // ── PERFORMANCE TAB ──
   if(activeTab==='performance'){
+    var empT=empTargets(emp);
     var perf7=getPerf(emp.id,7);
-    function a7(key){return perf7.length?(perf7.reduce(function(a,x){return a+x[key];},0)/perf7.length).toFixed(1):'—';}
+    var perfAll=(performance[emp.id]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    function avg7(key){if(!perf7.length)return null;return perf7.reduce(function(a,x){return a+(x[key]||0);},0)/perf7.length;}
+    function kpiCol(v,t,dir){if(v===null)return 'var(--text3)';return(dir==='lte'?v<=t:v>=t)?'var(--teal)':'var(--red)';}
     var kpis=[
-      {label:'CR OEM',key:'crOEM',color:'var(--amber)',target:KPI_TARGETS.crOEM.val,pct:true},
-      {label:'CR TW',key:'crTeilweise',color:'var(--text2)',target:null,pct:true},
-      {label:'CR SY',key:'crSuperYes',color:'var(--purple)',target:KPI_TARGETS.crSuperYes.val,pct:true},
-      {label:'CR MY',key:'crMegaYes',color:'var(--teal)',target:KPI_TARGETS.crMegaYes.val,pct:true},
-      {label:'Opt./Hour',key:'optPerH',color:'var(--blue)',target:KPI_TARGETS.optPerH.val,pct:false},
+      {label:'CR OEM',   key:'crOEM',      target:empT.crOEM.val,      dir:empT.crOEM.dir,      pct:true},
+      {label:'CR TW',    key:'crTeilweise', target:empT.crTeilweise.val, dir:empT.crTeilweise.dir, pct:true},
+      {label:'CR SY',    key:'crSuperYes',  target:empT.crSuperYes.val,  dir:empT.crSuperYes.dir,  pct:true},
+      {label:'CR MY',    key:'crMegaYes',   target:empT.crMegaYes.val,   dir:empT.crMegaYes.dir,   pct:true},
+      {label:'Opt./Std.',key:'optPerH',     target:empT.optPerH.val,     dir:empT.optPerH.dir,     pct:false},
     ];
-    html+='<div class="g5">';
+    html+='<div class="g5" style="margin-bottom:16px">';
     kpis.forEach(function(k){
-      var v=a7(k.key);
-      var hit=k.target?(parseFloat(v)>=k.target):true;
-      html+='<div class="kpi" style="border-top-color:'+k.color+'">'
-        +'<div class="kpi-label" style="color:'+k.color+'">'+k.label+'</div>'
-        +'<div class="kpi-val" style="color:'+k.color+'">'+v+(k.pct&&v!=='—'?'%':'')+'</div>'
-        +'<div class="kpi-sub" style="color:'+(k.target?(hit?'var(--teal)':'var(--red)'):'var(--text3)')+'">'+(k.target?'Target: '+k.target+(k.pct?'% ':' ')+(hit?'✓':'↓'):'7-Tage-Ø')+'</div>'
+      var v=avg7(k.key);var vR=v!==null?(k.pct?Math.round(v):+v.toFixed(1)):null;
+      var col=v!==null?kpiCol(v,k.target,k.dir):'var(--text3)';
+      var hit=v!==null&&(k.dir==='lte'?v<=k.target:v>=k.target);
+      html+='<div class="kpi" style="border-top-color:'+col+'">'
+        +'<div class="kpi-label" style="color:'+col+'">'+k.label+'</div>'
+        +'<div class="kpi-val" style="color:'+col+'">'+(vR!==null?vR+(k.pct?'%':''):'—')+'</div>'
+        +'<div class="kpi-sub" style="color:'+(v!==null?(hit?'var(--teal)':'var(--red)'):'var(--text3)')
+        +'">Ziel '+(k.dir==='gte'?'≥':'≤')+k.target+(k.pct?'%':'')+' '+(v!==null?(hit?'✓':'↓'):'')+'</div>'
         +'</div>';
     });
     html+='</div>';
     if(alerts.length){
       html+='<div class="alert alert-danger" style="margin-bottom:16px">'
         +'<i class="ti ti-alert-circle" style="font-size:18px;color:var(--red);flex-shrink:0"></i>'
-        +'<div><div style="font-size:13px;font-weight:600;color:var(--red)">Below target in '+alerts.length+' Bereich'+(alerts.length!==1?'s':'')+'</div>'
-        +'<div style="font-size:12px;color:var(--red)">'+alerts.map(function(a){return a.key+': '+a.val+' (target: '+a.target+')';}).join(' · ')+'</div>'
-        +'<div style="margin-top:8px"><button class="btn btn-sm btn-danger" onclick="alert(\'Book a coaching Session – calendar integration coming soon.\')"><i class="ti ti-calendar"></i> Book coaching Session</button></div>'
+        +'<div><div style="font-size:13px;font-weight:600;color:var(--red)">'+alerts.length+' KPI'+(alerts.length!==1?'s':'')+' unter Zielwert</div>'
+        +'<div style="font-size:12px;color:var(--red)">'+alerts.map(function(a){return a.key+': '+a.val;}).join(' · ')+'</div>'
+        +'<div style="margin-top:8px"><button class="btn btn-sm btn-primary" onclick="openSessionModal(selectedEmp)"><i class="ti ti-calendar"></i> Session planen</button></div>'
         +'</div></div>';
-    } else {
-      html+='<div class="alert alert-ok" style="margin-bottom:16px">'
-        +'<i class="ti ti-circle-check" style="font-size:18px;color:var(--teal);flex-shrink:0"></i>'
-        +'<div><div style="font-size:13px;font-weight:600;color:var(--teal-dark)">All KPIs on target</div></div></div>';
     }
     // Chart
-    html+='<div class="chart-wrap">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">'
-      +'<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">Performance trend</div>'
-      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +'<div class="chart-toggle">'
-      +'<button class="'+(perfMetric==='optPerH'?'active':'')+'" onclick="setMetric(\'optPerH\')">Opt./h</button>'
-      +'<button class="'+(perfMetric==='crOEM'?'active':'')+'" onclick="setMetric(\'crOEM\')">CR OEM</button>'
-      +'<button class="'+(perfMetric==='crSuperYes'?'active':'')+'" onclick="setMetric(\'crSuperYes\')">SY</button>'
-      +'<button class="'+(perfMetric==='crMegaYes'?'active':'')+'" onclick="setMetric(\'crMegaYes\')">MY</button>'
-      +'</div>'
-      +'<div class="chart-toggle">'
-      +'<button class="'+(perfRange===7?'active':'')+'" onclick="setRange(7)">7d</button>'
-      +'<button class="'+(perfRange===30?'active':'')+'" onclick="setRange(30)">30d</button>'
-      +'<button class="'+(perfRange===90?'active':'')+'" onclick="setRange(90)">90d</button>'
-      +'</div></div></div>'
-      +'<canvas id="perfChart" height="80"></canvas></div>';
-    // Manual entry form
-    html+='<div class="card">'
-      +'<div class="card-title"><i class="ti ti-plus"></i> Log Daily Performance</div>'
-      +'<div class="f5"><div><label>Date</label><input type="date" id="pd" value="'+today()+'"></div>'
-      +'<div><label>CR OEM %</label><input type="number" id="po" placeholder="0-100" min="0" max="100"></div>'
-      +'<div><label>CR Super Yes %</label><input type="number" id="psy" placeholder="0-100" min="0" max="100"></div>'
-      +'<div><label>CR Mega Yes %</label><input type="number" id="pmy" placeholder="0-100" min="0" max="100"></div>'
-      +'<div><label>Opt./Hour</label><input type="number" id="pop" placeholder="0.0" step="0.1" min="0"></div></div>'
-      +'<div class="f2"><div><label>CR Teilweise %</label><input type="number" id="pt" placeholder="0-100" min="0" max="100"></div>'
-      +'<div><label>CR Yes %</label><input type="number" id="pyes" placeholder="0-100" min="0" max="100"></div></div>'
-      +'<div style="margin-bottom:12px"><label>Note</label><input type="text" id="pn" placeholder="Optional..."></div>'
-      +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="savePerf()"><i class="ti ti-check"></i> Save Entry</button>'
-      +'</div>';
-    // Log table
-    var perf=performance[emp.id]||[];
-    if(perf.length>0){
-      html+='<div class="sec-title">Daily log</div><div class="tbl"><table><thead><tr><th>Date</th><th>CR OEM</th><th>Teilw.</th><th>Yes</th><th>SY</th><th>MY</th><th>Opt./h</th><th>Margin</th></tr></thead><tbody>';
-      perf.slice(0,20).forEach(function(row){
-        html+='<tr><td>'+fd(row.date)+'</td>'
-          +'<td style="color:var(--amber);font-weight:600">'+row.crOEM+'%</td>'
-          +'<td>'+row.crTeilweise+'%</td>'
-          +'<td>'+row.crYes+'%</td>'
-          +'<td style="color:var(--purple);font-weight:600">'+row.crSuperYes+'%</td>'
-          +'<td style="color:var(--teal);font-weight:600">'+row.crMegaYes+'%</td>'
-          +'<td>'+row.optPerH.toFixed(1)+'</td>'
-          +'<td style="color:var(--blue)">€'+(row.margin||0)+'</td></tr>';
+    var mMap={
+      calls:{f:'aktivitaeten',l:'Aktivitäten',c:'#534AB7'},
+      optPerH:{f:'optPerH',l:'Opt./Std.',c:'#378ADD'},
+      crTeilweise:{f:'crTeilweise',l:'CR TW %',c:'#888780'},
+      crYes:{f:'crYes',l:'CR Yes %',c:'#639922'},
+      crSuperYes:{f:'crSuperYes',l:'CR SY %',c:'#534AB7'},
+      crMegaYes:{f:'crMegaYes',l:'CR MY %',c:'#1D9E75'},
+      crOEM:{f:'crOEM',l:'CR OEM %',c:'#BA7517'}
+    };
+    html+='<div class="card" style="margin-bottom:16px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+      +'<div class="card-title" style="margin:0">Performance Trend</div>'
+      +'<div style="display:flex;gap:8px">'
+      +'<div class="chart-toggle">';
+    Object.keys(mMap).forEach(function(k){
+      var lbl={calls:'Opt.',optPerH:'Opt./h',crTeilweise:'TW',crYes:'Yes',crSuperYes:'SY',crMegaYes:'MY',crOEM:'CR OEM'}[k]||k;
+      html+='<button class="'+(perfMetric===k?'active':'')+'" data-m="'+k+'" onclick="setMetric(this.dataset.m)">'+lbl+'</button>';
+    });
+    html+='</div><div class="chart-toggle">';
+    [7,30,90].forEach(function(d){html+='<button class="'+(perfRange===d?'active':'')+'" data-d="'+d+'" onclick="setRange(parseInt(this.dataset.d))">'+d+'d</button>';});
+    html+='</div></div></div><canvas id="perfChart" height="80"></canvas></div>';
+    // Tabelle
+    html+='<div class="sec-title" style="margin-bottom:10px">Tagesübersicht</div>';
+    if(!perfAll.length){
+      html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:32px;text-align:center;color:var(--text3)">'
+        +'<i class="ti ti-file-upload" style="font-size:28px;display:block;margin-bottom:8px"></i>'
+        +'Noch keine Daten – bitte CSV in den Einstellungen hochladen</div>';
+    } else {
+      html+='<div class="tbl"><table><thead><tr>'
+        +'<th>Datum</th><th>Aktivitäten</th><th>NE</th><th>NM</th><th>NErr</th>'
+        +'<th>Conv. OEM</th><th>TW</th><th>Yes</th><th>SY</th><th>MY</th>'
+        +'<th>CR OEM%</th><th>CR TW%</th><th>CR SY%</th><th>CR MY%</th>'
+        +'<th>Upsells</th><th>WKA</th><th>Opt. Ges.</th><th>Opt./Std.</th><th>Marge Ges.</th>'
+        +'</tr></thead><tbody>';
+      perfAll.forEach(function(row){
+        var akt=row.aktivitaeten||row.calls||0;
+        var convOEM=row.convOEM||0;
+        var tw=row.convTW||0,yes=row.convYes||0,sy=row.convSY||0,my=row.convMY||0;
+        var notR=row.notReached||0,notP=row.notPossible||0,notS=row.notSuccessful||0;
+        var ups=row.upsells||0,wka=row.wka||0;
+        var optGes=row.optGesamt||(convOEM+ups+wka)||0;
+        var marge=row.margeGesamt||row.margin||0;
+        var crOEM=row.crOEM||0,crTW=row.crTeilweise||0,crSY=row.crSuperYes||0,crMY=row.crMegaYes||0;
+        var optH=row.optPerH||0;
+        function fc(v,t,dir){if(!t&&t!==0)return '';return(dir==='lte'?v<=t:v>=t)?'color:var(--teal)':'color:var(--red)';}
+        html+='<tr>'
+          +'<td style="font-weight:500;white-space:nowrap">'+fd(row.date)+'</td>'
+          +'<td style="text-align:center;font-weight:600">'+akt+'</td>'
+          +'<td style="text-align:center;color:var(--text2)">'+notR+'</td>'
+          +'<td style="text-align:center;color:var(--text2)">'+notP+'</td>'
+          +'<td style="text-align:center;color:var(--text2)">'+notS+'</td>'
+          +'<td style="text-align:center;font-weight:600;color:var(--purple)">'+convOEM+'</td>'
+          +'<td style="text-align:center;color:var(--amber)">'+tw+'</td>'
+          +'<td style="text-align:center;color:var(--blue)">'+yes+'</td>'
+          +'<td style="text-align:center;color:var(--purple)">'+sy+'</td>'
+          +'<td style="text-align:center;color:var(--teal)">'+my+'</td>'
+          +'<td style="text-align:center;font-weight:600;'+fc(crOEM,empT.crOEM.val,empT.crOEM.dir)+'">'+crOEM+'%</td>'
+          +'<td style="text-align:center;'+fc(crTW,empT.crTeilweise.val,empT.crTeilweise.dir)+'">'+crTW+'%</td>'
+          +'<td style="text-align:center;'+fc(crSY,empT.crSuperYes.val,empT.crSuperYes.dir)+'">'+crSY+'%</td>'
+          +'<td style="text-align:center;'+fc(crMY,empT.crMegaYes.val,empT.crMegaYes.dir)+'">'+crMY+'%</td>'
+          +'<td style="text-align:center;color:var(--blue)">'+ups+'</td>'
+          +'<td style="text-align:center;color:var(--blue)">'+wka+'</td>'
+          +'<td style="text-align:center;font-weight:600">'+optGes+'</td>'
+          +'<td style="text-align:center">'+(optH?optH.toFixed(1):'—')+'</td>'
+          +'<td style="text-align:right;font-weight:600;color:var(--blue)">€'+Math.round(marge).toLocaleString('de-DE')+'</td>'
+          +'</tr>';
       });
       html+='</tbody></table></div>';
     }
