@@ -326,6 +326,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -1578,7 +1579,7 @@ function renderTab(){
     }
     html+='</div>';
     html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;flex:1">';
-    html+='<div style="position:relative"><canvas id="radarChart" height="260"></canvas></div>';
+    html+='<div style="position:relative"><canvas id="radarChart" height="360"></canvas></div>';
     html+='<div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">';
     ['skill','will','result'].forEach(function(cat){
       html+='<span style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:'+CCAT[cat].col+'">';
