@@ -318,6 +318,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <script>function renderCoachingAnsicht(){
   var ma=document.getElementById('mainArea');if(!ma)return;
   var heute=today(),hD=new Date(heute+'T00:00:00');
@@ -2340,59 +2341,125 @@ function openCoachingEval(empId){
   var CC={skill:{col:'#534AB7',bg:'#EEEDFE',l:'Skill'},will:{col:'#BA7517',bg:'#FBEAE0',l:'Will'},result:{col:'#085041',bg:'#E1F5EE',l:'Result'}};
   var existing=(reviews[empId]||[]).filter(function(r){return r.einwand!==undefined;});
   var last=existing.length?existing.sort(function(a,b){return b.date.localeCompare(a.date);})[0]:null;
-  var el=document.createElement('div');
-  el.id='cevModal';
-  el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
-  var inner=document.createElement('div');
-  inner.style.cssText='background:var(--bg);border-radius:16px;padding:24px 28px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3)';
-  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">';
-  h+='<div style="font-size:17px;font-weight:700">Mitarbeiterentwicklung bewerten</div>';
-  h+='<button id="cevClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3)">×</button></div>';
-  h+='<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:600;color:var(--text2)">Bewertungsdatum</label><br>';
-  h+='<input type="date" id="cev-date" value="'+today()+'" style="margin-top:4px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);width:180px"></div>';
+
+  // Build modal via DOM API - no onclick strings needed
+  var overlay=document.createElement('div');
+  overlay.id='cevModal';
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--bg);border-radius:16px;padding:24px 28px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.3)';
+
+  // Header
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:18px';
+  hdr.innerHTML='<div style="font-size:17px;font-weight:700">Mitarbeiterentwicklung bewerten</div>';
+  var closeBtn=document.createElement('button');
+  closeBtn.textContent='×';
+  closeBtn.style.cssText='background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);line-height:1';
+  closeBtn.onclick=function(){overlay.remove();};
+  hdr.appendChild(closeBtn);
+  box.appendChild(hdr);
+
+  // Date input
+  var dateWrap=document.createElement('div');
+  dateWrap.style.marginBottom='16px';
+  var dateLabel=document.createElement('label');
+  dateLabel.style.cssText='font-size:12px;font-weight:600;color:var(--text2)';
+  dateLabel.textContent='Bewertungsdatum';
+  var dateInput=document.createElement('input');
+  dateInput.type='date';
+  dateInput.id='cev-date';
+  dateInput.value=today();
+  dateInput.style.cssText='display:block;margin-top:4px;font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);width:180px';
+  dateWrap.appendChild(dateLabel);
+  dateWrap.appendChild(dateInput);
+  box.appendChild(dateWrap);
+
+  // Sliders per category
   ['skill','will','result'].forEach(function(cat){
     var cdims=DIMS.filter(function(d){return d.cat===cat;});
-    h+='<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:'+CC[cat].col+';background:'+CC[cat].bg+';padding:6px 12px;border-radius:var(--r-md);margin-bottom:10px">'+CC[cat].l.toUpperCase()+'</div>';
+    var catDiv=document.createElement('div');
+    catDiv.style.marginBottom='16px';
+    var catHdr=document.createElement('div');
+    catHdr.style.cssText='font-size:11px;font-weight:700;color:'+CC[cat].col+';background:'+CC[cat].bg+';padding:6px 12px;border-radius:var(--r-md);margin-bottom:10px;letter-spacing:.04em';
+    catHdr.textContent=CC[cat].l.toUpperCase();
+    catDiv.appendChild(catHdr);
     cdims.forEach(function(d){
       var def=last&&last[d.key]!==undefined?last[d.key]:5;
-      h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">';
-      h+='<span style="width:155px;font-size:13px;flex-shrink:0">'+d.label+'</span>';
-      h+='<input type="range" class="cev-sl" data-k="'+d.key+'" id="cev-'+d.key+'" min="0" max="10" step="1" value="'+def+'" style="flex:1;accent-color:'+CC[cat].col+'">';
-      h+='<span id="cevv-'+d.key+'" style="width:22px;text-align:right;font-size:14px;font-weight:700;color:'+CC[cat].col+'">'+def+'</span>';
-      h+='</div>';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;margin-bottom:10px';
+      var lbl=document.createElement('span');
+      lbl.style.cssText='width:155px;font-size:13px;flex-shrink:0';
+      lbl.textContent=d.label;
+      var slider=document.createElement('input');
+      slider.type='range';slider.min=0;slider.max=10;slider.step=1;slider.value=def;
+      slider.id='cev-'+d.key;
+      slider.style.cssText='flex:1;accent-color:'+CC[cat].col;
+      var val=document.createElement('span');
+      val.id='cevv-'+d.key;
+      val.style.cssText='width:22px;text-align:right;font-size:14px;font-weight:700;color:'+CC[cat].col;
+      val.textContent=def;
+      slider.oninput=function(){val.textContent=this.value;};
+      row.appendChild(lbl);row.appendChild(slider);row.appendChild(val);
+      catDiv.appendChild(row);
     });
-    h+='</div>';
+    box.appendChild(catDiv);
   });
-  h+='<div style="margin-bottom:16px"><label style="font-size:12px;font-weight:600;color:var(--text2)">Notiz (optional)</label><br>';
-  h+='<textarea id="cev-note" rows="2" style="margin-top:4px;width:100%;box-sizing:border-box;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical" placeholder="Beobachtungen, Schwerpunkte..."></textarea></div>';
-  h+='<div style="display:flex;gap:10px">';
-  h+='<button class="btn btn-primary" style="flex:1" data-eid="'+empId+'" onclick="saveCoachEval(parseInt(this.dataset.eid),document.getElementById(\"cevModal\"))">&#10003; Bewertung speichern</button>';
-  h+='<button class="btn" id="cevCancel">Abbrechen</button></div>';
-  inner.innerHTML=h;
-  el.appendChild(inner);
-  document.body.appendChild(el);
-  document.getElementById('cevClose').onclick=function(){el.remove();};
-  document.getElementById('cevCancel').onclick=function(){el.remove();};
-  el.addEventListener('input',function(ev){
-    if(ev.target.classList.contains('cev-sl')){
-      var sp=document.getElementById('cevv-'+ev.target.dataset.k);
-      if(sp)sp.textContent=ev.target.value;
-    }
-  });
-  // save handled via data-eid onclick
+
+  // Note
+  var noteWrap=document.createElement('div');
+  noteWrap.style.marginBottom='16px';
+  var noteLabel=document.createElement('label');
+  noteLabel.style.cssText='font-size:12px;font-weight:600;color:var(--text2)';
+  noteLabel.textContent='Notiz (optional)';
+  var noteArea=document.createElement('textarea');
+  noteArea.id='cev-note';
+  noteArea.rows=2;
+  noteArea.placeholder='Beobachtungen, Schwerpunkte...';
+  noteArea.style.cssText='display:block;margin-top:4px;width:100%;box-sizing:border-box;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical';
+  noteWrap.appendChild(noteLabel);
+  noteWrap.appendChild(noteArea);
+  box.appendChild(noteWrap);
+
+  // Buttons
+  var btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;gap:10px';
+  var saveBtn=document.createElement('button');
+  saveBtn.className='btn btn-primary';
+  saveBtn.style.flex='1';
+  saveBtn.innerHTML='&#10003; Bewertung speichern';
+  saveBtn.onclick=function(){saveCoachEval(empId);};
+  var cancelBtn=document.createElement('button');
+  cancelBtn.className='btn';
+  cancelBtn.textContent='Abbrechen';
+  cancelBtn.onclick=function(){overlay.remove();};
+  btnRow.appendChild(saveBtn);
+  btnRow.appendChild(cancelBtn);
+  box.appendChild(btnRow);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
 }
 
-function saveCoachEval(empId,modal){
+function saveCoachEval(empId){
   var KEYS=['einwand','bedarf','produkt','gespraech','motivation','coach','team','crOEM','crTW','crSY','crMY'];
-  var date=document.getElementById('cev-date').value;
-  var note=document.getElementById('cev-note').value.trim();
+  var dateEl=document.getElementById('cev-date');
+  var noteEl=document.getElementById('cev-note');
+  if(!dateEl){alert('Fehler: Formular nicht gefunden.');return;}
+  var date=dateEl.value;
+  var note=noteEl?noteEl.value.trim():'';
   if(!date){alert('Bitte Datum eingeben.');return;}
   var entry={date:date,note:note};
-  KEYS.forEach(function(k){var el=document.getElementById('cev-'+k);entry[k]=el?parseInt(el.value):5;});
+  KEYS.forEach(function(k){
+    var el=document.getElementById('cev-'+k);
+    entry[k]=el?parseInt(el.value):5;
+  });
   if(!reviews[empId])reviews[empId]=[];
   reviews[empId]=reviews[empId].filter(function(r){return !(r.date===date&&r.einwand!==undefined);});
   reviews[empId].push(entry);
   lsSave();
+  var modal=document.getElementById('cevModal');
   if(modal)modal.remove();
   renderTab();
 }
