@@ -201,6 +201,9 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
+
+
 <div class="sidebar">
   <div class="sb-header">
     <div class="sb-logo"><div class="sb-dot"></div><span class="sb-title">SFP Coaching</span></div>
@@ -303,6 +306,10 @@ tr:hover td{background:var(--bg2);}
     <button class="btn btn-primary" onclick="scorecardSpeichern()"><i class="ti ti-check"></i> Session speichern</button>
   </div>
 </div></div>
+
+
+
+
 
 
 
@@ -1405,13 +1412,9 @@ function renderEmpDetail(){
     +'<div class="tab" data-tab="performance" onclick="switchTab(\'performance\')">Performance</div>'
     +'<div class="tab" data-tab="coaching-eval" onclick="switchTab(\'coaching-eval\')">Coaching</div>'
     +'<div class="tab" data-tab="session" onclick="switchTab(\'session\')">Session</div>'
-    +'<div class="tab" data-tab="protocols" onclick="switchTab(\'protocols\')">Protokolle</div>'
-    +'<div class="tab" data-tab="progress" onclick="switchTab(\'progress\')">Fortschritt</div>'
-    +'<div class="tab" data-tab="solidroad" onclick="switchTab(\'solidroad\')">SolidRoad</div>'
-    +'<div class="tab" data-tab="onboarding" onclick="switchTab(\'onboarding\')">Onboarding</div>'
-    +'<div class="tab" data-tab="review" onclick="switchTab(\'review\')">Gespräche</div>'
-    +'<div class="tab" data-tab="emp-settings" onclick="switchTab(\'emp-settings\')">Einstellungen</div>'
     +'<div class="tab" data-tab="tasks" onclick="switchTab(\'tasks\')" id="tasksTabBtn">Tasks'+(tc>0?' <span style="background:var(--purple);color:#fff;border-radius:20px;font-size:10px;font-weight:600;padding:1px 6px">'+tc+'</span>':'')+'</div>'
+    +'<div class="tab" data-tab="solidroad" onclick="switchTab(\'solidroad\')">SolidRoad</div>'
+    +'<div class="tab" data-tab="emp-settings" onclick="switchTab(\'emp-settings\')">Einstellungen</div>'
     +'</div>'
     +'<div class="content" id="tabContent"></div>';
   renderTabBar();
@@ -1718,118 +1721,88 @@ function renderTab(){
 
     // ── Coaching-Historie (Sessions) ──
     html+='<div class="sec-title" style="margin-top:24px;margin-bottom:10px">Coaching-Historie</div>';
-    var sessions=(protocols[emp.id]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
-    if(!sessions.length){
+    var chSessions=(protocols[emp.id]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+    if(!chSessions.length){
       html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;text-align:center;color:var(--text3)"><i class="ti ti-calendar-off" style="font-size:24px;display:block;margin-bottom:6px"></i>Noch keine Sessions vorhanden</div>';
     } else {
       html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">';
+      html+='<colgroup><col style="width:130px"><col style="width:160px"><col style="width:200px"><col><col style="width:44px"></colgroup>';
       html+='<thead><tr style="background:var(--bg2)">';
       html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border)">Datum</th>';
-      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Typ</th>';
-      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Bewertung</th>';
-      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Fokus</th>';
-      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Notizen</th>';
-      html+="</tr></thead><tbody>';";
-      sessions.forEach(function(s,i){
-        var RM={Teilweise:{c:'var(--amber)',l:'Teilweise'},Yes:{c:'var(--teal)',l:'Yes'},'Super Yes':{c:'var(--purple)',l:'Super Yes'},'Mega Yes':{c:'var(--blue)',l:'Mega Yes'}};
-        var rm=s.rating?RM[s.rating]:null;
-        var rb=rm?'<span style="font-size:11px;font-weight:700;color:'+rm.c+'">'+rm.l+'</span>':'<span style="color:var(--text3)">—</span>';
-        var focus=s.focus||( s.focusAreas?s.focusAreas.join(', '):'—');
-        var notes=s.text||s.notes||'—';
-        html+='<tr style="'+(i%2?'background:var(--bg2)':'')+'">';
-        html+='<td style="padding:8px 12px;font-size:12px;white-space:nowrap;border-bottom:1px solid var(--border)">'+fd(s.date)+'</td>';
-        html+='<td style="padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)">'+(s.type||'Session')+'</td>';
-        html+='<td style="padding:8px 12px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">'+rb+'</td>';
-        html+='<td style="padding:8px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border);border-left:1px solid var(--border)">'+focus+'</td>';
-        html+='<td style="padding:8px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);border-left:1px solid var(--border);word-break:break-word">'+notes+'</td>';
-        html+='</tr>';
+      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Art</th>';
+      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Inhalt</th>';
+      html+='<th style="text-align:left;padding:8px 12px;font-size:11px;border-bottom:1px solid var(--border);border-left:1px solid var(--border)">Notiz</th>';
+      html+='<th style="border-bottom:1px solid var(--border);border-left:1px solid var(--border)"></th>';
+      html+='</tr></thead><tbody>';
+      chSessions.forEach(function(s,idx){
+        var eid='ch'+emp.id+'x'+idx;
+        var hasDetail=(s.start&&s.start.trim())||(s.stop&&s.stop.trim())||(s.cont&&s.cont.trim());
+        var topics=s.topics&&s.topics.length?s.topics.join(', '):(s.focus||'—');
+        html+='<tr style="border-bottom:1px solid var(--border)">';
+        html+='<td style="padding:8px 12px;font-size:12px;white-space:nowrap">'+fd(s.date)+'</td>';
+        html+='<td style="padding:8px 12px;font-size:12px;color:var(--text2);border-left:1px solid var(--border)">'+(s.type||'Session')+'</td>';
+        html+='<td style="padding:8px 12px;font-size:12px;border-left:1px solid var(--border)">'+topics+'</td>';
+        html+='<td style="padding:8px 12px;font-size:12px;color:var(--text2);border-left:1px solid var(--border);word-break:break-word">'+(s.notes||s.text||'—')+'</td>';
+        html+='<td style="text-align:center;border-left:1px solid var(--border)">';
+        if(hasDetail){html+='<button data-eid="'+eid+'" onclick="toggleSessCard(this.dataset.eid)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:6px 10px"><span id="arr-'+eid+'">▾</span></button>';}
+        html+='</td></tr>';
+        if(hasDetail){
+          html+='<tr id="body-'+eid+'" style="display:none;background:var(--bg2)"><td colspan="5" style="padding:0">';
+          [{key:'start',label:'START',col:'#2D7A4F'},{key:'stop',label:'STOP',col:'#C0392B'},{key:'cont',label:'CONTINUE',col:'#B8860B'}].forEach(function(f){
+            var val=s[f.key]||'';if(!val.trim())return;
+            html+='<div style="padding:8px 14px;border-top:1px solid var(--border);border-left:3px solid '+f.col+'"><span style="font-size:10px;font-weight:700;color:'+f.col+'">'+f.label+'</span><span style="font-size:12px;color:var(--text);margin-left:10px">'+val+'</span></div>';
+          });
+          html+='</td></tr>';
+        }
       });
       html+='</tbody></table></div>';
     }
   }
 
-
+  // ── SESSION TAB ──
   // ── SESSION TAB ──
   if(activeTab==='session'){
     var SESSION_TYPES=['Call Shadowing Aktiv','Call Shadowing Passiv','1:1 Coaching','Calls Review','Gruppencoaching','Quiz','SolidRoad','Bemerkung','Sonstiges'];
     var SESSION_TOPICS=['Einwandsbehandlung','Bedarfsanalyse','Produktwissen','Gesprächsführung','Motivation','Coachability','Zuverlässigkeit','Teamfähigkeit','CR OEM','TW','SY','MY','Sonstiges'];
+    // Gleiche DIMS wie Coaching Tab
     var SDIMS=[
-      {key:'Einwandsbehandlung', label:'Einwandsb.', cat:'skill'},
-      {key:'Bedarfsanalyse',     label:'Bedarfsana.',cat:'skill'},
-      {key:'Produktwissen',      label:'Produktw.',  cat:'skill'},
-      {key:'Gesprächsführung',   label:'Gesprächsf.',cat:'skill'},
-      {key:'Motivation',         label:'Motivation', cat:'will'},
-      {key:'Coachability',       label:'Coachab.',   cat:'will'},
-      {key:'Zuverlässigkeit',    label:'Zuverl.',    cat:'will'},
-      {key:'Teamfähigkeit',      label:'Teamf.',     cat:'will'},
-      {key:'CR OEM',             label:'CR OEM',     cat:'result'},
-      {key:'TW',                 label:'TW',         cat:'result'},
-      {key:'SY',                 label:'SY',         cat:'result'},
-      {key:'MY',                 label:'MY',         cat:'result'},
+      {key:'Einwandsbehandlung', short:'Einwandsb.', cat:'skill'},
+      {key:'Bedarfsanalyse',     short:'Bedarfsana.',cat:'skill'},
+      {key:'Produktwissen',      short:'Produktw.',  cat:'skill'},
+      {key:'Gesprächsführung',   short:'Gesprächsf.',cat:'skill'},
+      {key:'Motivation',         short:'Motivation', cat:'will'},
+      {key:'Coachability',       short:'Coachab.',   cat:'will'},
+      {key:'Zuverlässigkeit',    short:'Zuverl.',    cat:'will'},
+      {key:'Teamfähigkeit',      short:'Teamf.',     cat:'will'},
+      {key:'CR OEM',             short:'CR OEM',     cat:'result'},
+      {key:'TW',                 short:'TW',         cat:'result'},
+      {key:'SY',                 short:'SY',         cat:'result'},
+      {key:'MY',                 short:'MY',         cat:'result'},
     ];
+    // Gleiche Farben wie Coaching Tab
     var SCCAT={
-      skill: {col:'#534AB7',fill:'rgba(83,74,183,0.15)',  l:'Skill'},
-      will:  {col:'#C47A1E',fill:'rgba(196,122,30,0.15)', l:'Will'},
-      result:{col:'#0A6B55',fill:'rgba(10,107,85,0.15)',  l:'Result'}
+      skill: {col:'#534AB7',fill:'rgba(83,74,183,0.15)',  bg:'#EEEDFE', l:'Skill'},
+      will:  {col:'#C47A1E',fill:'rgba(196,122,30,0.15)', bg:'#FBEAE0', l:'Will'},
+      result:{col:'#0A6B55',fill:'rgba(10,107,85,0.15)',  bg:'#E1F5EE', l:'Result'}
     };
     var sessions=(protocols[emp.id]||[]).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
 
     // Zähle Sessions pro Topic
     var tc={};SDIMS.forEach(function(d){tc[d.key]=0;});
     sessions.forEach(function(s){(s.topics||[]).forEach(function(t){if(tc[t]!==undefined)tc[t]++;});});
-
-    // Max für Skalierung
     var maxVal=Math.max(1,Math.max.apply(null,SDIMS.map(function(d){return tc[d.key];})));
-
-    // Kategorie-Summen
     var catSum={skill:0,will:0,result:0};
     SDIMS.forEach(function(d){catSum[d.cat]+=tc[d.key];});
 
-    // ── Layout: Spinne links, Balken rechts ──
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">';
+    // ── EXAKT gleiche Grid-Struktur wie Coaching Tab ──
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;align-items:start">';
 
-    // ── Links: SVG Radar ──
+    // ── Links: Chart (identischer Container wie Coaching Tab) ──
     html+='<div style="display:flex;flex-direction:column;gap:12px">';
     html+='<div class="sec-title">Sessions Übersicht <span style="font-size:12px;font-weight:400;color:var(--text3)">– Anzahl pro Bereich</span></div>';
-    html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px">';
-
-    // SVG Radar (Werte = Anzahl Sessions)
-    (function(){
-      var dims=SDIMS.filter(function(d){return d.cat!=='result'||['CR OEM','TW','SY','MY'].indexOf(d.key)>=0;});
-      var n=dims.length,W=320,CX=160,CY=155,R=110;
-      var svg='<svg viewBox="0 0 '+W+' 310" width="100%" style="display:block;margin:0 auto">';
-      // Ringe (0,1,2,3,4,5)
-      for(var v=1;v<=5;v++){
-        var r2=R*v/maxVal;
-        var rpts=dims.map(function(_,i){var a=(i/n)*2*Math.PI-Math.PI/2;return (CX+r2*Math.cos(a)).toFixed(1)+','+(CY+r2*Math.sin(a)).toFixed(1);}).join(' ');
-        svg+='<polygon points="'+rpts+'" fill="none" stroke="rgba(0,0,0,'+(v===maxVal?'0.12':'0.06')+')" stroke-width="'+(v===maxVal?'1.5':'0.7')+'"/>';
-      }
-      // Achslinien
-      dims.forEach(function(_,i){var a=(i/n)*2*Math.PI-Math.PI/2;var p={x:CX+R*Math.cos(a),y:CY+R*Math.sin(a)};svg+='<line x1="'+CX+'" y1="'+CY+'" x2="'+p.x.toFixed(1)+'" y2="'+p.y.toFixed(1)+'" stroke="rgba(0,0,0,0.07)" stroke-width="1"/>';});
-      // Kategorie-Segmente
-      ['skill','will','result'].forEach(function(cat){
-        var idxs=[];dims.forEach(function(d,i){if(d.cat===cat)idxs.push(i);});
-        var pts=CX+','+CY;
-        idxs.forEach(function(i){var a=(i/n)*2*Math.PI-Math.PI/2;pts+=' '+(CX+R*Math.cos(a)).toFixed(1)+','+(CY+R*Math.sin(a)).toFixed(1);});
-        svg+='<polygon points="'+pts+'" fill="'+SCCAT[cat].fill+'" stroke="'+SCCAT[cat].col+'" stroke-width="1" stroke-linejoin="round" opacity="0.6"/>';
-      });
-      // Datenfläche
-      var dataPts=dims.map(function(d,i){var v=tc[d.key]||0;var r2=R*v/maxVal;var a=(i/n)*2*Math.PI-Math.PI/2;return (CX+r2*Math.cos(a)).toFixed(1)+','+(CY+r2*Math.sin(a)).toFixed(1);}).join(' ');
-      svg+='<polygon points="'+dataPts+'" fill="rgba(30,30,60,0.08)" stroke="rgba(30,30,60,0.7)" stroke-width="2.5" stroke-linejoin="round"/>';
-      // Punkte + Werte
-      dims.forEach(function(d,i){
-        var v=tc[d.key]||0;var r2=R*v/maxVal;var a=(i/n)*2*Math.PI-Math.PI/2;
-        var px=CX+r2*Math.cos(a),py=CY+r2*Math.sin(a);
-        var lx=CX+(R+22)*Math.cos(a),ly=CY+(R+22)*Math.sin(a);
-        svg+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="4.5" fill="'+SCCAT[d.cat].col+'" stroke="white" stroke-width="2"/>';
-        if(v>0)svg+='<text x="'+px.toFixed(1)+'" y="'+(py-7).toFixed(1)+'" text-anchor="middle" font-size="9" font-weight="700" fill="'+SCCAT[d.cat].col+'">'+v+'</text>';
-        var anchor=lx<CX-5?'end':lx>CX+5?'start':'middle';
-        svg+='<text x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" text-anchor="'+anchor+'" font-size="10" font-weight="600" fill="'+SCCAT[d.cat].col+'">'+d.label+'</text>';
-      });
-      svg+='</svg>';
-      html+=svg;
-    })();
-
+    html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;flex:1">';
+    // Canvas mit exakt gleicher Höhe wie Coaching Tab
+    html+='<div style="position:relative;height:360px"><canvas id="sessRadar"></canvas></div>';
     // Legende
     html+='<div style="display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap">';
     ['skill','will','result'].forEach(function(cat){
@@ -1837,11 +1810,11 @@ function renderTab(){
       html+='<span style="width:10px;height:10px;border-radius:50%;background:'+SCCAT[cat].col+';display:inline-block"></span>'+SCCAT[cat].l+'</span>';
     });
     html+='</div></div>';
-    // Kategorie-Kacheln
+    // Kategorie-Kacheln (identisch wie Coaching Tab)
     html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">';
     ['skill','will','result'].forEach(function(cat){
       var s=catSum[cat];
-      html+='<div style="background:'+SCCAT[cat].fill+';border:1px solid '+SCCAT[cat].col+';border-radius:var(--r-lg);padding:10px;text-align:center">';
+      html+='<div style="background:'+SCCAT[cat].bg+';border:1px solid '+SCCAT[cat].col+';border-radius:var(--r-lg);padding:10px;text-align:center">';
       html+='<div style="font-size:10px;font-weight:700;color:'+SCCAT[cat].col+';margin-bottom:3px">'+SCCAT[cat].l.toUpperCase()+'</div>';
       html+='<div style="font-size:26px;font-weight:700;color:'+SCCAT[cat].col+'">'+s+'</div>';
       html+='<div style="font-size:10px;color:'+SCCAT[cat].col+';opacity:0.7">Sessions</div>';
@@ -1849,22 +1822,21 @@ function renderTab(){
     });
     html+='</div></div>';
 
-    // ── Rechts: Balken ──
+    // ── Rechts: Detailansicht (identischer Aufbau wie Coaching Tab rechts) ──
     html+='<div style="display:flex;flex-direction:column;gap:12px">';
     html+='<div class="sec-title">Detailansicht</div>';
     html+='<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">';
     ['skill','will','result'].forEach(function(cat){
       var cdims=SDIMS.filter(function(d){return d.cat===cat;});
-      html+='<div style="padding:6px 14px;background:'+SCCAT[cat].fill+';border-top:2px solid '+SCCAT[cat].col+'">';
+      html+='<div style="padding:6px 14px;background:'+SCCAT[cat].bg+';border-top:2px solid '+SCCAT[cat].col+'">';
       html+='<span style="font-size:10px;font-weight:700;color:'+SCCAT[cat].col+'">'+SCCAT[cat].l.toUpperCase()+'</span></div>';
       cdims.forEach(function(d){
         var v=tc[d.key]||0;
         var pct=Math.round(v/maxVal*100);
-        var bc=v===0?'var(--border)':v>=5?SCCAT[cat].col:v>=3?SCCAT[cat].col:'var(--teal)';
         html+='<div style="padding:7px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px">';
-        html+='<div style="width:130px;font-size:12px;flex-shrink:0">'+d.key+'</div>';
-        html+='<div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">';
-        html+='<div style="height:100%;width:'+(v===0?0:Math.max(4,pct))+'%;background:'+SCCAT[cat].col+';border-radius:4px;opacity:'+(v===0?0.2:0.85)+'"></div></div>';
+        html+='<div style="width:145px;font-size:12px;flex-shrink:0">'+d.key+'</div>';
+        html+='<div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">';
+        html+='<div style="height:100%;width:'+(v===0?0:Math.max(3,pct))+'%;background:'+SCCAT[cat].col+';border-radius:3px;opacity:'+(v===0?0.2:0.85)+'"></div></div>';
         html+='<div style="width:28px;text-align:right;font-size:13px;font-weight:700;color:'+(v===0?'var(--text3)':SCCAT[cat].col)+'">'+v+'</div>';
         html+='</div>';
       });
@@ -1890,10 +1862,10 @@ function renderTab(){
     html+='<option value="">— Bitte wählen —</option>';
     SESSION_TOPICS.forEach(function(t){html+='<option value="'+t+'">'+t+'</option>';});
     html+='</select></div></div>';
-    [{id:'sess-start',label:'START',sub:'Was soll neu begonnen werden?',col:'#2D7A4F',bg:'#E8F5EE'},
-     {id:'sess-stop', label:'STOP', sub:'Was soll aufgehört werden?',   col:'#C0392B',bg:'#FDECEA'},
-     {id:'sess-cont', label:'CONTINUE',sub:'Was soll beibehalten werden?',col:'#B8860B',bg:'#FEF9E7'},
-     {id:'sess-note', label:'Notizen',sub:'Beobachtungen & Vereinbarungen',col:'var(--text2)',bg:'var(--bg2)'}
+    [{id:'sess-start',label:'START',    sub:'Was soll neu begonnen werden?',  col:'#2D7A4F',bg:'#E8F5EE'},
+     {id:'sess-stop', label:'STOP',     sub:'Was soll aufgehört werden?',     col:'#C0392B',bg:'#FDECEA'},
+     {id:'sess-cont', label:'CONTINUE', sub:'Was soll beibehalten werden?',   col:'#B8860B',bg:'#FEF9E7'},
+     {id:'sess-note', label:'Notizen',  sub:'Beobachtungen & Vereinbarungen', col:'var(--text2)',bg:'var(--bg2)'}
     ].forEach(function(f){
       html+='<div style="border-radius:var(--r-md);overflow:hidden">';
       html+='<div style="background:'+f.bg+';padding:7px 12px;border-left:3px solid '+f.col+'"><span style="font-size:11px;font-weight:700;color:'+f.col+'">'+f.label+'</span> <span style="font-size:11px;color:'+f.col+';opacity:0.7">– '+f.sub+'</span></div>';
@@ -1931,104 +1903,52 @@ function renderTab(){
       html+='</div>';
     }
     html+='</div></div>';
-  }
 
-  // ── PROTOCOLS TAB ──
-  if(activeTab==='protocols'){
-    html+='<div class="card"><div class="card-title"><i class="ti ti-edit"></i> New Protocol</div>'
-      +'<div class="f3"><div><label>Date</label><input type="date" id="nd" value="'+today()+'"></div>'
-      +'<div><label>Rating</label><select id="nr">'+RATINGS.map(function(r){return '<option>'+r+'</option>';}).join('')+'</select></div>'
-      +'<div><label>Focus topic</label><input type="text" id="nf" placeholder="Topic of this Session"></div></div>'
-      +'<div style="margin-bottom:10px"><label>Notes</label><textarea id="nt" placeholder="What stood out..."></textarea></div>'
-      +'<div style="margin-bottom:12px"><label>Rate criteria (0–100)</label>'
-      +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:6px">';
-    ratingCriteria.forEach(function(rc){
-      html+='<div><label style="font-size:11px">'+rc.name+'</label><input type="number" id="rc-'+rc.id+'" placeholder="'+rc.target+'" min="0" max="100"></div>';
-    });
-    html+='</div></div>'
-      +'<div style="display:flex;gap:10px">'
-      +'<button class="btn btn-primary btn-sm" onclick="saveNote()"><i class="ti ti-check"></i> Save Protocol</button>'
-      +'<button class="btn btn-sm" onclick="openModal(\'ratingModal\')"><i class="ti ti-plus"></i> Add criterion</button>'
-      +'<button class="btn btn-sm" style="color:var(--purple);border-color:var(--purple)" onclick="addTaskFromCurrentProtocol()"><i class="ti ti-checkbox"></i> Add as task</button>'
-      +'</div></div>';
-    if(p.length===0){html+='<div class="empty">No protocols yet.</div>';}
-    else{
-      html+='<div class="sec-title">Previous Sessions</div>';
-      p.forEach(function(pr){
-        var rs=RS[pr.rating];
-        html+='<div class="proto"><div class="proto-hdr">'
-          +'<div class="proto-meta"><i class="ti ti-calendar" style="font-size:12px"></i>'+fd(pr.date)+(pr.focus?' · '+pr.focus:'')+'</div>'
-          +'<span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+pr.rating+'</span></div>'
-          +'<div style="font-size:13px;line-height:1.6">'+pr.note+'</div>';
-        if(pr.criteria&&Object.keys(pr.criteria).length){
-          html+='<div class="crit-tags">';
-          ratingCriteria.forEach(function(rc){
-            if(pr.criteria[rc.id]===undefined)return;
-            var v=pr.criteria[rc.id];
-            var col=v>=rc.target?'var(--teal-bg)':v>=rc.target*.8?'var(--amber-bg)':'var(--red-bg)';
-            var tc=v>=rc.target?'var(--teal-dark)':v>=rc.target*.8?'var(--amber-dark)':'var(--red)';
-            html+='<span style="font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px;background:'+col+';color:'+tc+'">'+rc.name+': '+v+'%</span>';
-          });
-          html+='</div>';
-        }
-        html+='</div>';
-      });
-    }
-    html+='<div class="sec-title" style="margin-top:20px">Rating criteria</div>'
-      +'<div class="tbl"><table><thead><tr><th>Criterion</th><th>Category</th><th>Target</th><th>Description</th></tr></thead><tbody>';
-    ratingCriteria.forEach(function(rc){
-      html+='<tr><td style="font-weight:500">'+rc.name+'</td><td><span class="badge" style="background:var(--bg2);color:var(--text2)">'+rc.cat+'</span></td><td>'+rc.target+'%</td><td style="color:var(--text2)">'+rc.desc+'</td></tr>';
-    });
-    html+='</tbody></table></div><button class="btn btn-sm" onclick="openModal(\'ratingModal\')"><i class="ti ti-plus"></i> Add criterion</button>';
-  }
-
-  // ── PROGRESS TAB ──
-  if(activeTab==='progress'){
-    var perf7b=getPerf(emp.id,7);
-    function avb(key){return perf7b.length?(perf7b.reduce(function(a,x){return a+x[key];},0)/perf7b.length).toFixed(1):'—';}
-    if(alerts.length){
-      html+='<div class="alert alert-danger" style="margin-bottom:16px">'
-        +'<i class="ti ti-alert-circle" style="font-size:18px;color:var(--red);flex-shrink:0"></i>'
-        +'<div><div style="font-size:13px;font-weight:600;color:var(--red)">KPIs below target – coaching Session recommended</div>'
-        +'<div style="font-size:12px;color:var(--red)">'+alerts.map(function(a){return a.key+': '+a.val+' vs target '+a.target;}).join(' · ')+'</div>'
-        +'<div style="margin-top:8px"><button class="btn btn-sm btn-danger" onclick="alert(\'Book a coaching Session.\')"><i class="ti ti-calendar"></i> Book a Session</button></div>'
-        +'</div></div>';
-    }
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">'
-      +'<div><div class="sec-title">Skill profile (latest Session)</div>';
-    if(p.length===0){html+='<div class="empty" style="padding:1.5rem">No data yet.</div>';}
-    else{
-      var latest=p[0];var skills=latest.skills||{};var first=p[p.length-1].skills||{};
-      SKILLS.forEach(function(s,i){
-        var key=SK_DE[i];var val=skills[key]||0;var prev=first[key]||0;var delta=val-prev;
-        var col=val>=80?'var(--teal)':val>=60?'var(--purple)':'var(--amber)';
-        html+='<div class="skill-row"><span class="skill-label">'+s+'</span>'
-          +'<div class="skill-track"><div class="skill-fill" style="width:'+val+'%;background:'+col+'"></div></div>'
-          +'<span class="skill-pct">'+val+'%</span>'
-          +'<span class="skill-delta" style="color:'+(delta>=0?'var(--teal)':'var(--red)')+'">'+(delta>=0?'+':'')+delta+'</span></div>';
-      });
-    }
-    html+='</div><div><div class="sec-title">Performance (7-day avg)</div><div class="g2">'
-      +'<div class="kpi" style="border-top-color:var(--amber)"><div class="kpi-label" style="color:var(--amber)">CR OEM</div><div class="kpi-val" style="color:var(--amber)">'+avb('crOEM')+(avb('crOEM')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crOEM'))>=KPI_TARGETS.crOEM.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crOEM.val+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">SY</div><div class="kpi-val" style="color:var(--purple)">'+avb('crSuperYes')+(avb('crSuperYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crSuperYes'))>=KPI_TARGETS.crSuperYes.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crSuperYes.val+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">MY</div><div class="kpi-val" style="color:var(--teal)">'+avb('crMegaYes')+(avb('crMegaYes')!=='—'?'%':'')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('crMegaYes'))>=KPI_TARGETS.crMegaYes.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.crMegaYes.val+'%</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Opt./Hour</div><div class="kpi-val" style="color:var(--blue)">'+avb('optPerH')+'</div><div class="kpi-sub" style="color:'+(parseFloat(avb('optPerH'))>=KPI_TARGETS.optPerH.val?'var(--teal)':'var(--red)')+'">Target: '+KPI_TARGETS.optPerH.val+'</div></div>'
-      +'</div></div></div>';
-    if(p.length>0){
-      html+='<div class="sec-title">Session history</div><div class="sess-hist">';
-      p.forEach(function(pr,i){
-        var rs=RS[pr.rating];
-        var sa=pr.skills?Math.round(Object.values(pr.skills).reduce(function(a,b){return a+b;},0)/Object.values(pr.skills).length):null;
-        var bc=pr.rating==='Mega Yes'?'var(--teal)':pr.rating==='Super Yes'?'var(--purple)':pr.rating==='Yes'?'var(--blue)':'var(--amber)';
-        html+='<div class="sess-row">'
-          +'<span style="font-size:11px;color:var(--text3);width:18px;text-align:right">'+(p.length-i)+'</span>'
-          +'<span style="font-size:12px;color:var(--text2);width:74px">'+fd(pr.date)+'</span>'
-          +'<span class="badge" style="background:'+rs.bg+';color:'+rs.color+'">'+pr.rating+'</span>'
-          +(sa!==null?'<div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+sa+'%;background:'+bc+';border-radius:3px"></div></div><span style="font-size:12px;color:var(--text2);width:32px;text-align:right">'+sa+'%</span>':'<div style="flex:1"></div>')
-          +'<span style="font-size:12px;color:var(--text2);width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(pr.focus||'')+'</span></div>';
-      });
-      html+='</div>';
-    }
+    // ── Chart.js init – EXAKT gleiche Optionen wie Coaching Tab ──
+    (function(tc,dims,ccat,maxVal){
+      setTimeout(function(){
+        var canvas=document.getElementById('sessRadar');
+        if(!canvas)return;
+        if(canvas._ci){canvas._ci.destroy();}
+        canvas._ci=new Chart(canvas,{
+          type:'radar',
+          data:{
+            labels:dims.map(function(d){return d.short;}),
+            datasets:[{
+              data:dims.map(function(d){return tc[d.key]||0;}),
+              backgroundColor:'rgba(60,60,100,0.07)',
+              borderColor:'rgba(60,60,100,0.7)',
+              borderWidth:2,
+              pointBackgroundColor:dims.map(function(d){return ccat[d.cat].col;}),
+              pointBorderColor:'white',
+              pointBorderWidth:1.5,
+              pointRadius:5,
+              pointHoverRadius:7,
+              fill:true
+            }]
+          },
+          options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            scales:{r:{
+              min:0,
+              max:maxVal,
+              ticks:{stepSize:1,font:{size:9},color:'rgba(0,0,0,0.3)',backdropColor:'transparent'},
+              grid:{color:'rgba(0,0,0,0.06)'},
+              angleLines:{color:'rgba(0,0,0,0.07)'},
+              pointLabels:{
+                font:{size:12,weight:'600'},
+                color:function(ctx){return ccat[dims[ctx.index].cat].col;}
+              }
+            }},
+            plugins:{
+              legend:{display:false},
+              tooltip:{callbacks:{label:function(ctx){return ' '+ctx.raw+' Sessions';}}}
+            }
+          }
+        });
+      },150);
+    })(tc,SDIMS,SCCAT,Math.max(maxVal,5));
   }
 
   // ── SOLIDROAD TAB ──
@@ -2069,101 +1989,6 @@ function renderTab(){
     }
   }
 
-  // ── ONBOARDING TAB ──
-  if(activeTab==='onboarding'){
-    var startDate=emp.startDate?new Date(emp.startDate+'T00:00:00'):null;
-    var days=[...new Set(obSteps.map(function(s){return s.day;}))].sort(function(a,b){return a-b;});
-    var totalSteps=obSteps.length;
-    var completedSteps=ob.filter(Boolean).length;
-    var pct=totalSteps?Math.round(completedSteps/totalSteps*100):0;
-    var currentDay=days.find(function(day){return obSteps.filter(function(s){return s.day===day;}).some(function(s){return !ob[obSteps.indexOf(s)];});})||days[days.length-1];
-    var level=pct>=100?'Experte':pct>=75?'Sehr gut':pct>=50?'Fortgeschritten':pct>=25?'Entwicklung':'Einsteiger';
-    var levelColor=pct>=100?'var(--teal)':pct>=75?'var(--purple)':pct>=50?'var(--blue)':pct>=25?'var(--amber)':'var(--text2)';
-    var levelBg=pct>=100?'var(--teal-bg)':pct>=75?'var(--purple-bg)':pct>=50?'var(--blue-bg)':pct>=25?'var(--amber-bg)':'var(--bg2)';
-    var daysSince=startDate?Math.floor((new Date()-startDate)/86400000)+1:null;
-    // Summary cards
-    html+='<div class="g4" style="margin-bottom:20px">'
-      +'<div class="kpi" style="border-top-color:'+levelColor+'"><div class="kpi-label" style="color:'+levelColor+'">Level</div><div class="kpi-val" style="color:'+levelColor+';font-size:17px">'+level+'</div><div class="kpi-sub">'+pct+'% complete</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">Steps done</div><div class="kpi-val" style="color:var(--teal)">'+completedSteps+'<span style="font-size:13px;color:var(--text3)"> / '+totalSteps+'</span></div><div class="kpi-sub">'+(totalSteps-completedSteps)+' remaining</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">Active day</div><div class="kpi-val" style="color:var(--purple)">Day '+currentDay+'</div><div class="kpi-sub">'+(pct>=100?'Alles erledigt':'Aktueller Fokus')+'</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Days since start</div><div class="kpi-val" style="color:var(--blue)">'+(daysSince!==null?daysSince:'—')+'</div><div class="kpi-sub">'+(emp.startDate?'Since '+fd(emp.startDate):'Kein Startdatum')+'</div></div>'
-      +'</div>';
-    // Donut + Level ladder
-    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">'
-      +'<div class="card" style="margin-bottom:0"><div class="card-title"><i class="ti ti-chart-donut"></i> Overall progress</div>'
-      +'<div style="display:flex;align-items:center;gap:20px">'
-      +'<div style="position:relative;width:96px;height:96px;flex-shrink:0">'
-      +'<svg viewBox="0 0 36 36" style="width:96px;height:96px;transform:rotate(-90deg)">'
-      +'<circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--bg3)" stroke-width="3.2"/>'
-      +'<circle cx="18" cy="18" r="15.9" fill="none" stroke="'+levelColor+'" stroke-width="3.2" stroke-dasharray="'+pct+' '+(100-pct)+'" stroke-linecap="round"/>'
-      +'</svg>'
-      +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-size:17px;font-weight:600;color:'+levelColor+'">'+pct+'%</span></div></div>'
-      +'<div style="flex:1">';
-    days.forEach(function(day){
-      var ds=obSteps.filter(function(s){return s.day===day;});
-      var done=ds.filter(function(s){return ob[obSteps.indexOf(s)];}).length;
-      var dp=Math.round(done/ds.length*100);
-      var dc=dp===100?'var(--teal)':dp>=50?'var(--purple)':'var(--amber)';
-      html+='<div style="margin-bottom:9px">'
-        +'<div style="display:flex;justify-content:space-between;margin-bottom:3px">'
-        +'<span style="font-size:12px;color:var(--text2)">Day '+day+'</span>'
-        +'<span style="font-size:12px;font-weight:600;color:'+(dp===100?'var(--teal)':'var(--text2)')+'">'+done+'/'+ds.length+(dp===100?' ✓':'')+'</span></div>'
-        +'<div style="height:6px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+dp+'%;background:'+dc+';border-radius:3px"></div></div></div>';
-    });
-    html+='</div></div></div>'
-      +'<div class="card" style="margin-bottom:0"><div class="card-title"><i class="ti ti-trophy"></i> Onboarding level</div>'
-      +'<div style="display:flex;flex-direction:column;gap:6px">';
-    [['Einsteiger','0–24%',0],['Entwicklung','25–49%',25],['Fortgeschritten','50–74%',50],['Sehr gut','75–99%',75],['Experte','100%',100]].forEach(function(entry){
-      var lv=entry[0],range=entry[1],threshold=entry[2];
-      var active=level===lv,reached=pct>=threshold;
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r-md);background:'+(active?levelBg:'var(--bg2)')+';border:1px solid '+(active?levelColor:'transparent')+'">'
-        +'<div style="width:26px;height:26px;border-radius:50%;background:'+(reached?(active?levelColor:'var(--teal)'):'var(--bg3)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'
-        +'<i class="ti ti-'+(reached?'check':'lock')+'" style="font-size:12px;color:'+(reached?'#fff':'var(--text3)')+'"></i></div>'
-        +'<div style="flex:1"><div style="font-size:13px;font-weight:'+(active?'600':'400')+';color:'+(active?levelColor:'var(--text2)')+'">'+lv+'</div>'
-        +'<div style="font-size:11px;color:var(--text3)">'+range+'</div></div>'
-        +(active?'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:'+levelColor+';color:#fff">Current</span>':'')
-        +'</div>';
-    });
-    html+='</div></div></div>';
-    // Steps by day
-    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-      +'<div class="sec-title" style="margin-bottom:0">Steps by day</div>'
-      +'<button class="btn btn-sm" onclick="openModal(\'obModal\')"><i class="ti ti-plus"></i> Add step</button></div>';
-    days.forEach(function(day){
-      var daySteps=obSteps.filter(function(s){return s.day===day;});
-      var dayDone=daySteps.filter(function(s){return ob[obSteps.indexOf(s)];}).length;
-      var dayPct=Math.round(dayDone/daySteps.length*100);
-      var dateLabel='';
-      if(startDate){
-        var dd=new Date(startDate.getTime()+(day-1)*86400000);
-        dateLabel=' · '+fd(dd.toISOString().slice(0,10));
-      }
-      html+='<div style="margin-bottom:10px"><div class="ob-day-hdr">'
-        +'<i class="ti ti-calendar-event" style="color:var(--purple);font-size:16px"></i>'
-        +'<span class="ob-day-label">Day '+day+dateLabel+'</span>'
-        +'<span style="font-size:12px;color:var(--text2)">'+dayDone+'/'+daySteps.length+'</span>'
-        +'<div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;max-width:120px;margin:0 10px">'
-        +'<div style="height:100%;width:'+dayPct+'%;background:'+(dayPct===100?'var(--teal)':'var(--purple)')+';border-radius:3px"></div></div>'
-        +'<span style="font-size:11px;font-weight:600;color:'+(dayPct===100?'var(--teal)':'var(--text3)')+'">'+(dayPct===100?'✓ Done':dayPct+'%')+'</span></div><div>';
-      daySteps.forEach(function(step){
-        var i=obSteps.indexOf(step);
-        html+='<div class="ob-step">'
-          +'<div class="ob-hdr" onclick="toggleOBDetail('+i+')">'
-          +'<div class="ob-check'+(ob[i]?' done':'')+'" onclick="event.stopPropagation();toggleOB('+i+')">'+(ob[i]?'<i class="ti ti-check" style="font-size:11px"></i>':'')+'</div>'
-          +'<span class="ob-label">'+step.label+'</span>'
-          +'<span class="ob-status">'+(ob[i]?'Abgeschlossen':'Ausstehend')+'</span>'
-          +'<i class="ti ti-chevron-down ob-chev" id="chev-'+i+'"></i></div>'
-          +'<div class="ob-detail" id="ob-d-'+i+'">'
-          +'<div class="ob-desc">'+step.detail+'</div>'
-          +'<div class="ob-video-wrap">'
-          +'<div class="ob-video-label"><span><i class="ti ti-video" style="font-size:13px;margin-right:4px"></i>Training video</span>'+(step.videoUrl?'<span class="ftp-badge"><i class="ti ti-cloud" style="font-size:11px"></i> FTP</span>':'')+'</div>'
-          +(step.videoUrl?'<video controls preload="metadata" style="width:100%;max-height:280px;border-radius:var(--r-sm);background:#000"><source src="'+step.videoUrl+'"><p style="font-size:12px;color:var(--text2);padding:8px">Cannot play. <a href="'+step.videoUrl+'" target="_blank">Open directly</a></p></video>':'<div style="font-size:12px;color:var(--text3);margin-bottom:8px">No video linked yet.</div>')
-          +'<div style="display:flex;gap:8px;margin-top:8px"><input type="url" id="vid-'+i+'" placeholder="FTP path or https://" value="'+(step.videoUrl||'')+'" style="font-size:12px"><button class="btn btn-sm" onclick="saveVideoUrl('+i+')"><i class="ti ti-check"></i> Save</button></div>'
-          +'</div></div></div>';
-      });
-      html+='</div></div>';
-    });
-  }
 
   // ── TASKS TAB ──
   if(activeTab==='tasks'){
@@ -2223,79 +2048,7 @@ function renderTab(){
   }
 
 
-  // ── REVIEW TAB ──
-  if(activeTab==='review'){
-    var empReviews=reviews[emp.id]||[];
-    // Auto-schedule from start date if not already present
-    if(emp.startDate){
-      var sd=new Date(emp.startDate+'T00:00:00');
-      var autoTypes=[['Onboarding Review',3],['Performance Review',11],['Annual Review',12]];
-      autoTypes.forEach(function(pair){
-        var type=pair[0],mo=pair[1];
-        if(!empReviews.find(function(r){return r.type===type;})){
-          var dd=new Date(sd.getTime());dd.setMonth(dd.getMonth()+mo);
-          empReviews.push({id:Date.now()+mo,type:type,date:dd.toISOString().slice(0,10),status:dd.toISOString().slice(0,10)<today()?'overdue':'upcoming',notes:'',goals:'',rating:null,kpis:{},auto:true});
-        }
-      });
-      empReviews.sort(function(a,b){return a.date.localeCompare(b.date);});
-    }
-    var typeRS={'Onboarding Review':RS['Yes'],'Performance Review':RS['Super Yes'],'Annual Review':RS['Mega Yes']};
-    html+='<div class="g3" style="margin-bottom:20px">'
-      +'<div class="kpi" style="border-top-color:var(--purple)"><div class="kpi-label" style="color:var(--purple)">Total</div><div class="kpi-val" style="color:var(--purple)">'+empReviews.length+'</div><div class="kpi-sub">reviews scheduled</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--teal)"><div class="kpi-label" style="color:var(--teal)">Completed</div><div class="kpi-val" style="color:var(--teal)">'+empReviews.filter(function(r){return r.status==='abgeschlossen';}).length+'</div><div class="kpi-sub">done</div></div>'
-      +'<div class="kpi" style="border-top-color:var(--blue)"><div class="kpi-label" style="color:var(--blue)">Upcoming</div><div class="kpi-val" style="color:var(--blue)">'+empReviews.filter(function(r){return r.status==='upcoming';}).length+'</div><div class="kpi-sub">scheduled</div></div>'
-      +'</div>';
-    html+='<div class="sec-title" style="margin-bottom:12px">Review timeline</div>';
-    if(empReviews.length===0){html+='<div class="empty">No reviews yet. Set a start date in Einstellungen to auto-schedule.</div>';}
-    empReviews.forEach(function(rev){
-      var tc2=typeRS[rev.type]||{bg:'var(--bg2)',color:'var(--text2)'};
-      var sc=rev.status==='abgeschlossen'?'var(--teal)':rev.status==='overdue'?'var(--red)':'var(--blue)';
-      var scBg=rev.status==='abgeschlossen'?'var(--teal-bg)':rev.status==='overdue'?'var(--red-bg)':'var(--blue-bg)';
-      html+='<div class="card">'
-        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px">'
-        +'<div><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">'
-        +'<span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;background:'+tc2.bg+';color:'+tc2.color+'">'+rev.type+'</span>'
-        +'<span style="font-size:11px;padding:3px 9px;border-radius:20px;background:'+scBg+';color:'+sc+'">'+rev.status+'</span>'
-        +(rev.auto?'<span style="font-size:10px;color:var(--text3)">auto-scheduled</span>':'')
-        +'</div>'
-        +'<div style="font-size:12px;color:var(--text2)"><i class="ti ti-calendar" style="font-size:12px"></i> '+fd(rev.date)+'</div>'
-        +'</div>'
-        +(rev.rating?'<span class="badge" style="background:'+RS[rev.rating].bg+';color:'+RS[rev.rating].color+'">'+rev.rating+'</span>':'')
-        +'</div>';
-      // Completed review – show notes, goals, KPIs
-      if(rev.status==='abgeschlossen'){
-        if(rev.notes)html+='<div style="font-size:13px;line-height:1.6;margin-bottom:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--r-md)">'+rev.notes+'</div>';
-        if(rev.goals)html+='<div style="font-size:12px;color:var(--text2);margin-bottom:10px)"><strong>Goals agreed:</strong> '+rev.goals+'</div>';
-        if(rev.kpis&&Object.keys(rev.kpis).length){
-          html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px">';
-          var kpiDefs=[{k:'crOEM',l:'CR OEM',c:'var(--amber)'},{k:'crSuperYes',l:'Super Yes',c:'var(--purple)'},{k:'crMegaYes',l:'Mega Yes',c:'var(--teal)'},{k:'optPerH',l:'Opt./h',c:'var(--blue)'}];
-          kpiDefs.forEach(function(kd){if(rev.kpis[kd.k]!==undefined)html+='<div class="kpi" style="border-top-color:'+kd.c+'"><div class="kpi-label" style="color:'+kd.c+'">'+kd.l+'</div><div class="kpi-val" style="color:'+kd.c+'">'+rev.kpis[kd.k]+(kd.k!=='optPerH'?'%':'')+'</div></div>';});
-          html+='</div>';
-        }
-      } else {
-        // Upcoming/overdue – show form to complete
-        html+='<div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">'
-          +'<div><label>Session notes</label><textarea id="rnotes-'+rev.id+'" style="min-height:80px" placeholder="Key observations, strengths, areas to improve..."></textarea></div>'
-          +'<div><label>Goals agreed</label><input type="text" id="rgoals-'+rev.id+'" placeholder="What was agreed for the next period..."></div>'
-          +'<div class="f2">'
-          +'<div><label>Rating</label><select id="rrating-'+rev.id+'"><option value="">Select rating...</option>'+RATINGS.map(function(r){return '<option>'+r+'</option>';}).join('')+'</select></div>'
-          +'<div><label>Review date</label><input type="date" id="rdate-'+rev.id+'" value="'+rev.date+'"></div></div>'
-          +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">'
-          +'<div><label>CR OEM %</label><input type="number" id="rkpi-crOEM-'+rev.id+'" placeholder="e.g. 62" min="0" max="100"></div>'
-          +'<div><label>Super Yes %</label><input type="number" id="rkpi-crSuperYes-'+rev.id+'" placeholder="e.g. 14" min="0" max="100"></div>'
-          +'<div><label>Mega Yes %</label><input type="number" id="rkpi-crMegaYes-'+rev.id+'" placeholder="e.g. 9" min="0" max="100"></div>'
-          +'<div><label>Opt./Hour</label><input type="number" id="rkpi-optPerH-'+rev.id+'" placeholder="e.g. 2.1" step="0.1" min="0"></div>'
-          +'</div>'
-          +'<button class="btn btn-primary btn-sm" style="width:auto" onclick="completeReview('+rev.id+')"><i class="ti ti-check"></i> Complete review</button>'
-          +'</div>';
-      }
-      html+='</div>';
-    });
-    html+='<div style="margin-top:16px">'
-      +'<button class="btn btn-sm" onclick="addReview()"><i class="ti ti-plus"></i> Add review</button>'
-      +'</div>';
-  }
-
+  
   // ── EMP SETTINGS TAB ──
   if(activeTab==='emp-settings'){
     var t=empTargets(emp);
@@ -2751,8 +2504,8 @@ function toggleSessCard(eid){
   var body=document.getElementById('body-'+eid);
   var arr=document.getElementById('arr-'+eid);
   if(!body)return;
-  var open=body.style.display==='none';
-  body.style.display=open?'block':'none';
+  var open=body.style.display==='none'||body.style.display==='';
+  body.style.display=open?(body.tagName==='TR'?'table-row':'block'):'none';
   if(arr)arr.style.transform=open?'rotate(180deg)':'rotate(0deg)';
 }
 
