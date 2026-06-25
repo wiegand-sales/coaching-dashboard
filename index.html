@@ -222,6 +222,7 @@ tr:hover td{background:var(--bg2);}
 
 
 
+
 <div class="sidebar">
   <div class="sb-header">
     <div class="sb-logo"><div class="sb-dot"></div><span class="sb-title">SFP Coaching</span></div>
@@ -337,6 +338,8 @@ tr:hover td{background:var(--bg2);}
     <button class="btn btn-primary" onclick="scorecardSpeichern()"><i class="ti ti-check"></i> Session speichern</button>
   </div>
 </div></div>
+
+
 
 
 
@@ -2857,7 +2860,7 @@ function saveEmpEinstellungen(){
   emp.endDate=document.getElementById('es-end').value||null;
   emp.contract=document.getElementById('es-contract').value;
   emp.hours=parseInt(document.getElementById('es-hours').value)||40;
-  renderSidebar();renderEmpDetail();
+  renderSidebar();renderEmpDetail();  lsSave();
 }
 function saveEmpZiele(){
   var emp=employees.find(function(e){return e.id===selectedEmp;});
@@ -2875,6 +2878,7 @@ function saveEmpZiele(){
   emp.targets.optPerHDir=document.getElementById('es-d-opt').value;
   emp.targets.optPerDay=parseFloat(document.getElementById('es-optDay').value)||16;
   emp.targets.optPerDayDir=document.getElementById('es-d-optDay').value;
+  lsSave();
   alert('Ziele gespeichert für '+emp.name+'.');
   renderTab();
 }
